@@ -1008,7 +1008,7 @@
       try {
         const { error } = await _supa.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: window.location.href }
+          options: { redirectTo: 'https://pagina.github.io/pablo/' }
         });
         if (error) throw error;
       } catch (e) {

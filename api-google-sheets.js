@@ -520,17 +520,21 @@ function ensureCorrectFormulas(doc) {
  */
 function ensureExtraHeaders(sheet) {
   try {
+    const maxCols = sheet.getMaxColumns();
+    if (maxCols < 15) {
+      sheet.insertColumnsAfter(maxCols, 15 - maxCols);
+    }
     const headerRow = 5;
-    if (!sheet.getRange(headerRow, 12).getValue()) {
+    if (sheet.getRange(headerRow, 12).getValue() !== "Categoría") {
       sheet.getRange(headerRow, 12).setValue("Categoría");
     }
-    if (!sheet.getRange(headerRow, 13).getValue()) {
+    if (sheet.getRange(headerRow, 13).getValue() !== "Prioridad") {
       sheet.getRange(headerRow, 13).setValue("Prioridad");
     }
-    if (!sheet.getRange(headerRow, 14).getValue()) {
+    if (sheet.getRange(headerRow, 14).getValue() !== "Fecha inicio") {
       sheet.getRange(headerRow, 14).setValue("Fecha inicio");
     }
-    if (!sheet.getRange(headerRow, 15).getValue()) {
+    if (sheet.getRange(headerRow, 15).getValue() !== "Condiciones") {
       sheet.getRange(headerRow, 15).setValue("Condiciones");
     }
   } catch (e) {

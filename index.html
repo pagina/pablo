@@ -699,7 +699,7 @@
             <div class="sync-status-item"><span>Última sincronización:</span><span id="lastSyncVal">Nunca</span></div>
           </div>
         </div>
-        <div class="app-info-footer">GestorPRO v2.0 · PWA con soporte Offline</div>
+        <div class="app-info-footer">GestorPRO v2.2 · PWA con soporte Offline</div>
       </div>
     </main>
   </div>
@@ -1344,7 +1344,7 @@
       document.getElementById('provListView').style.display = '';
       document.getElementById('provDetailView').style.display = 'none';
       currentDetailProvId = null;
-      renderSummary(); renderProveedores();
+      renderAll();
     }
 
     function showDetail(id) {
@@ -1474,14 +1474,11 @@
 
     function renderDetailComprobantes(provAlias) {
       const comps = state.comprobantes.filter(c => c.provAlias === provAlias).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
-      const titleEl = document.getElementById('detailCompTitle');
       const el = document.getElementById('detailComps');
       if (comps.length === 0) {
-        titleEl.style.display = 'none';
-        el.innerHTML = '';
+        el.innerHTML = '<div class="empty-state" style="padding:16px"><div class="empty-state-text" style="color:var(--muted)">Sin comprobantes cargados</div></div>';
         return;
       }
-      titleEl.style.display = '';
       el.style.display = 'grid';
       el.innerHTML = comps.map(c => {
         const isLocal = c.data && c.data.startsWith('local://');

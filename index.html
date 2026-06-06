@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
- 
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -42,11 +42,11 @@
       --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.2);
       --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
- 
+
     /* ======================== RESET & BASE ======================== */
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html { scroll-behavior: smooth; }
- 
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
@@ -57,13 +57,13 @@
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
     }
- 
+
     /* ======================== SCROLLBAR ======================== */
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
- 
+
     /* ======================== LOGIN SCREEN ======================== */
     #loginScreen {
       position: fixed; inset: 0; z-index: 1000;
@@ -98,10 +98,10 @@
     }
     .btn-login:hover { opacity: .9; }
     .login-error { color: var(--red); font-size: 13px; margin-top: 10px; text-align: center; display: none; }
- 
+
     /* ======================== APP SHELL ======================== */
     #app { display: none; flex-direction: column; min-height: 100vh; }
- 
+
     header {
       background: var(--surface); border-bottom: 1px solid var(--border);
       padding: 0 16px; display: flex; align-items: center; justify-content: space-between;
@@ -121,7 +121,7 @@
       padding: 5px 10px; cursor: pointer; transition: color var(--transition);
     }
     .btn-logout:hover { color: var(--text); border-color: var(--border-hover); }
- 
+
     /* ======================== NAV TABS ======================== */
     nav {
       background: var(--surface); border-bottom: 1px solid var(--border);
@@ -138,13 +138,13 @@
     .nav-tab svg { width: 18px; height: 18px; }
     .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
     .nav-tab:hover { color: var(--text-secondary); }
- 
+
     /* ======================== MAIN CONTENT ======================== */
     main { flex: 1; padding: 16px; max-width: 900px; margin: 0 auto; width: 100%; }
     .section { display: none; animation: fadeIn .25s ease; }
     .section.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
- 
+
     /* ======================== DASHBOARD ======================== */
     .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
     .dash-card {
@@ -165,7 +165,7 @@
       font-size: 22px; font-weight: 800; font-family: 'Space Mono', monospace; margin-bottom: 2px;
     }
     .dash-card .dash-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
- 
+
     .dash-section { margin-bottom: 20px; }
     .dash-section-title {
       font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;
@@ -176,7 +176,7 @@
       background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
       padding: 6px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px;
     }
- 
+
     .dash-pago-item {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
       padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
@@ -187,7 +187,7 @@
     .dash-pago-prov { font-size: 13px; font-weight: 700; }
     .dash-pago-date { font-size: 11px; color: var(--muted); }
     .dash-pago-monto { font-size: 15px; font-weight: 700; font-family: 'Space Mono', monospace; color: var(--green); }
- 
+
     .dash-urgent-item {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
       padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
@@ -198,7 +198,7 @@
     .dash-urgent-alias { font-size: 13px; font-weight: 700; }
     .dash-urgent-cat { font-size: 11px; color: var(--muted); }
     .dash-urgent-pend { font-size: 14px; font-weight: 700; font-family: 'Space Mono', monospace; color: var(--red); }
- 
+
     /* ======================== SUMMARY GRID ======================== */
     .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
     .summary-card {
@@ -211,7 +211,7 @@
     .val-green { color: var(--green); }
     .val-yellow { color: var(--yellow); }
     .val-accent { color: var(--accent-light); }
- 
+
     /* ======================== TOOLBAR & SEARCH ======================== */
     .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
     .search-wrap { flex: 1; min-width: 160px; position: relative; }
@@ -230,7 +230,7 @@
     }
     .sort-select:focus { border-color: var(--accent); }
     .sort-select option { background: var(--surface); }
- 
+
     /* ======================== BUTTONS ======================== */
     .btn {
       background: linear-gradient(135deg, var(--accent), var(--accent-light));
@@ -252,7 +252,7 @@
       transition: all var(--transition); display: inline-flex; align-items: center; justify-content: center;
     }
     .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
- 
+
     /* ======================== FILTER CHIPS ======================== */
     .filter-bar { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
     .filter-chip {
@@ -262,7 +262,7 @@
     }
     .filter-chip:hover { border-color: var(--border-hover); color: var(--text-secondary); }
     .filter-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
- 
+
     /* ======================== PROVIDER CARDS ======================== */
     .prov-list { display: flex; flex-direction: column; gap: 10px; }
     .prov-card {
@@ -277,7 +277,7 @@
     .prov-card.estado-parcial::before { background: var(--yellow); }
     .prov-card.estado-dia::before { background: var(--green); }
     .prov-card:hover { border-color: var(--border-hover); box-shadow: var(--shadow-sm); }
- 
+
     .prov-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
     .prov-alias { font-size: 15px; font-weight: 800; }
     .prov-nombre { font-size: 12px; color: var(--muted); }
@@ -292,7 +292,7 @@
     .badge-urgente { background: var(--red-dim); color: var(--red); }
     .badge-normal { background: var(--yellow-dim); color: var(--yellow); }
     .badge-sinprisa { background: var(--green-dim); color: var(--green); }
- 
+
     .prov-meta { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; align-items: center; }
     .prov-cat-chip {
       font-size: 10px; font-weight: 600; color: var(--accent-light); background: var(--accent-dim);
@@ -301,21 +301,21 @@
     .prov-phone-chip {
       font-size: 10px; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 3px;
     }
- 
+
     .prov-amounts { display: flex; gap: 16px; flex-wrap: wrap; }
     .prov-amount .albl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; font-weight: 600; }
     .prov-amount .aval { font-size: 14px; font-weight: 700; font-family: 'Space Mono', monospace; }
- 
+
     .prov-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
     .prov-actions .btn, .prov-actions .btn-icon { font-size: 11px; }
- 
+
     /* ======================== PROGRESS BAR ======================== */
     .progress-bar { height: 5px; background: var(--surface3); border-radius: 3px; overflow: hidden; margin-top: 8px; }
     .progress-fill { height: 100%; border-radius: 3px; transition: width .6s cubic-bezier(.4,0,.2,1); }
     .progress-fill.red { background: linear-gradient(90deg, var(--red), #f97316); }
     .progress-fill.yellow { background: linear-gradient(90deg, var(--yellow), #fbbf24); }
     .progress-fill.green { background: linear-gradient(90deg, #16a34a, var(--green)); }
- 
+
     /* ======================== DETAIL VIEW ======================== */
     .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
     .btn-back {
@@ -332,7 +332,7 @@
     .detail-info-card .dil { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; margin-bottom: 4px; }
     .detail-info-card .div { font-size: 14px; font-weight: 700; word-break: break-all; }
     .detail-quick-actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
- 
+
     .cbu-row { display: flex; align-items: center; gap: 8px; }
     .cbu-val { font-family: 'Space Mono', monospace; font-size: 12px; word-break: break-all; }
     .btn-copy {
@@ -341,12 +341,12 @@
       white-space: nowrap; transition: color var(--transition);
     }
     .btn-copy:hover { color: var(--accent); border-color: var(--accent); }
- 
+
     .section-title {
       font-size: 13px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;
       letter-spacing: .5px; margin-bottom: 10px; margin-top: 20px;
     }
- 
+
     /* ======================== PAYMENT ITEMS ======================== */
     .pago-item { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; }
     .pago-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
@@ -367,7 +367,7 @@
       border-radius: 6px; padding: 6px 10px; transition: border-color var(--transition);
     }
     .comprobante-link:hover { border-color: var(--accent); }
- 
+
     /* ======================== MODALS ======================== */
     .modal-overlay {
       position: fixed; inset: 0; z-index: 200;
@@ -386,7 +386,7 @@
     .modal-title { font-size: 17px; font-weight: 800; }
     .btn-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 22px; line-height: 1; padding: 4px; }
     .btn-close:hover { color: var(--text); }
- 
+
     .form-group { margin-bottom: 12px; }
     .form-group label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
     .form-group input, .form-group select, .form-group textarea {
@@ -402,7 +402,7 @@
     .form-hint { font-size: 10px; color: var(--muted); margin-top: 3px; }
     .modal-footer { display: flex; gap: 10px; margin-top: 18px; }
     .modal-footer .btn { flex: 1; justify-content: center; padding: 12px; font-size: 13px; }
- 
+
     /* ======================== FILE UPLOAD ======================== */
     .file-drop {
       border: 2px dashed var(--border); border-radius: var(--radius-sm);
@@ -429,7 +429,7 @@
       background: var(--red); border-radius: 50%; border: none; color: #fff;
       font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
- 
+
     /* ======================== COMPROBANTES GRID ======================== */
     .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
     .comp-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; cursor: pointer; transition: border-color var(--transition); }
@@ -438,7 +438,7 @@
     .comp-info { padding: 6px; }
     .comp-info-name { font-size: 10px; color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
     .comp-info-date { font-size: 10px; color: var(--accent-light); font-weight: 500; }
- 
+
     /* ======================== MOVIMIENTOS TABLE ======================== */
     .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; overflow-x: auto; }
     .mov-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -446,7 +446,7 @@
     .mov-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
     .mov-table tr:last-child td { border-bottom: none; }
     .mov-table tr:hover td { background: var(--surface2); }
- 
+
     /* ======================== LIGHTBOX ======================== */
     .lightbox {
       position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,.94);
@@ -464,7 +464,7 @@
       background: var(--accent); border: none; border-radius: 8px; color: #fff;
       font-family: inherit; font-size: 13px; font-weight: 700; padding: 10px 20px; cursor: pointer;
     }
- 
+
     /* ======================== TOAST ======================== */
     .toast {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
@@ -476,7 +476,7 @@
     .toast.show { transform: translateX(-50%) translateY(0); }
     .toast.success { border-color: var(--green); color: var(--green); }
     .toast.error { border-color: var(--red); color: var(--red); }
- 
+
     /* ======================== SYNC BADGE ======================== */
     .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); display: inline-block; transition: background-color .3s; }
     .sync-dot.syncing { background: var(--accent); animation: pulse-sync 1.2s infinite ease-in-out; }
@@ -484,7 +484,7 @@
     .sync-dot.error { background: var(--red); }
     .sync-dot.offline { background: var(--yellow); }
     @keyframes pulse-sync { 0%,100% { transform: scale(.85); opacity: .6; } 50% { transform: scale(1.3); opacity: 1; } }
- 
+
     /* ======================== CONFIG ======================== */
     .config-container { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
     .config-title { font-size: 17px; font-weight: 800; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
@@ -502,12 +502,12 @@
     .sync-status-item { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
     .sync-status-item span:last-child { color: var(--text); font-weight: 600; }
     .app-info-footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 40px; }
- 
+
     /* ======================== EMPTY STATE ======================== */
     .empty-state { text-align: center; padding: 40px 24px; color: var(--muted); }
     .empty-state-icon { font-size: 40px; margin-bottom: 10px; }
     .empty-state-text { font-size: 13px; }
- 
+
     /* ======================== RESPONSIVE ======================== */
     @media(max-width:480px) {
       .dash-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -524,9 +524,9 @@
     }
   </style>
 </head>
- 
+
 <body>
- 
+
   <!-- ==================== LOGIN ==================== -->
   <div id="loginScreen">
     <div class="login-box">
@@ -540,7 +540,7 @@
       <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
     </div>
   </div>
- 
+
   <!-- ==================== APP ==================== -->
   <div id="app">
     <header>
@@ -554,7 +554,7 @@
         <button class="btn-logout" onclick="doLogout()">Salir</button>
       </div>
     </header>
- 
+
     <nav>
       <button class="nav-tab active" data-section="dashboard" onclick="switchTab(this,'dashboard')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="4" rx="1"/><rect x="14" y="10" width="7" height="11" rx="1"/><rect x="3" y="13" width="7" height="8" rx="1"/></svg>
@@ -577,7 +577,7 @@
         Ajustes
       </button>
     </nav>
- 
+
     <main>
       <!-- ========== DASHBOARD ========== -->
       <div class="section active" id="sec-dashboard">
@@ -586,7 +586,7 @@
         <div class="dash-section" id="dashUrgent"></div>
         <div class="dash-section" id="dashRecent"></div>
       </div>
- 
+
       <!-- ========== PROVEEDORES ========== -->
       <div class="section" id="sec-proveedores">
         <div id="provListView">
@@ -642,7 +642,7 @@
           <div id="detailComps" class="comp-grid"></div>
         </div>
       </div>
- 
+
       <!-- ========== MOVIMIENTOS ========== -->
       <div class="section" id="sec-movimientos">
         <div class="toolbar" style="margin-bottom:10px">
@@ -663,7 +663,7 @@
           </table>
         </div>
       </div>
- 
+
       <!-- ========== COMPROBANTES ========== -->
       <div class="section" id="sec-comprobantes">
         <div class="toolbar" style="margin-bottom:14px">
@@ -674,7 +674,7 @@
         </div>
         <div id="compGrid" class="comp-grid"></div>
       </div>
- 
+
       <!-- ========== CONFIGURACIÓN ========== -->
       <div class="section" id="sec-config">
         <div class="config-container">
@@ -703,9 +703,9 @@
       </div>
     </main>
   </div>
- 
+
   <!-- ==================== MODALS ==================== -->
- 
+
   <!-- Modal Proveedor -->
   <div class="modal-overlay" id="modalProv">
     <div class="modal">
@@ -790,7 +790,7 @@
       </div>
     </div>
   </div>
- 
+
   <!-- Modal Pago -->
   <div class="modal-overlay" id="modalPago">
     <div class="modal">
@@ -858,7 +858,7 @@
       </div>
     </div>
   </div>
- 
+
   <!-- Modal Deuda -->
   <div class="modal-overlay" id="modalDeuda">
     <div class="modal">
@@ -881,7 +881,7 @@
       </div>
     </div>
   </div>
- 
+
   <!-- Modal Subir Comprobante -->
   <div class="modal-overlay" id="modalUploadComp">
     <div class="modal">
@@ -921,17 +921,17 @@
       </div>
     </div>
   </div>
- 
+
   <!-- Lightbox -->
   <div class="lightbox" id="lightbox">
     <button class="lightbox-close" onclick="closeLightbox()">×</button>
     <img id="lightboxImg" src="" alt="">
     <button class="lightbox-download" onclick="downloadLightbox()">⬇ Descargar</button>
   </div>
- 
+
   <!-- Toast -->
   <div class="toast" id="toast"></div>
- 
+
   <!-- ==================== JAVASCRIPT ==================== -->
   <script>
     // ===================== DATA & CONFIG =====================
@@ -940,9 +940,9 @@
       'dueño': { pass: 'admin123', role: 'owner', label: 'Dueño' },
       'empleado': { pass: 'emp456', role: 'employee', label: 'Empleado' }
     };
- 
+
     const CATEGORIAS = ['Telas', 'Insumos', 'Servicios', 'Transporte', 'Mercería', 'Varios', 'Otro'];
- 
+
     let currentUser = null;
     let currentFilter = 'todos';
     let currentPriorityFilter = 'todos';
@@ -950,15 +950,15 @@
     let editingProvId = null;
     let currentDetailProvId = null;
     let pendingFiles = [];
- 
+
     const state = { proveedores: [], pagos: [], comprobantes: [] };
- 
+
     let sheetUrl = localStorage.getItem('gp_sheet_url') || 'https://script.google.com/macros/s/AKfycbwOS_fh676atP0DV5akvDmWhC5-YCVweUMc99A8cfWcxLTYR1Rix2mkk7SEJRPtlpRU/exec';
     let sheetToken = localStorage.getItem('gp_sheet_token') || 'gestorpro123';
     let syncQueue = [];
     let isSyncing = false;
     let lastSyncTime = localStorage.getItem('gp_last_sync') || 'Nunca';
- 
+
     // ===================== META ENCODING =====================
     function encodeMetaObs(meta, freeText) {
       const filtered = {};
@@ -971,7 +971,7 @@
       if (!hasData) return freeText;
       return `[META:${JSON.stringify(filtered)}]\n${freeText || ''}`.trim();
     }
- 
+
     function decodeMetaObs(obs) {
       if (!obs) return { meta: {}, text: '' };
       const match = obs.match(/^\[META:(.*?)\]\n?([\s\S]*)$/);
@@ -981,7 +981,7 @@
       }
       return { meta: {}, text: obs };
     }
- 
+
     function buildPaymentObs(metodo, referencia, banco, obs) {
       const parts = [];
       if (metodo) parts.push(metodo);
@@ -990,7 +990,7 @@
       if (obs) parts.push(obs);
       return parts.join(' | ');
     }
- 
+
     function parsePaymentObs(raw) {
       if (!raw) return { metodo: '', referencia: '', banco: '', texto: '' };
       const metodos = ['Transferencia', 'Efectivo', 'Cheque', 'Mercado Pago', 'Otro'];
@@ -1006,12 +1006,12 @@
       result.texto = textParts.join(' | ');
       return result;
     }
- 
+
     // ===================== INDEXEDDB =====================
     const DB_NAME = 'gp_offline_files_db';
     const DB_VERSION = 1;
     const STORE_NAME = 'files';
- 
+
     function getDB() {
       return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -1023,7 +1023,7 @@
         request.onerror = e => reject(e.target.error);
       });
     }
- 
+
     async function saveFileOffline(id, base64, name, mimeType) {
       try {
         const db = await getDB();
@@ -1035,7 +1035,7 @@
         });
       } catch (err) { console.error('IndexedDB save error:', err); }
     }
- 
+
     async function getFileOffline(id) {
       try {
         const db = await getDB();
@@ -1047,7 +1047,7 @@
         });
       } catch (err) { console.error('IndexedDB read error:', err); return null; }
     }
- 
+
     async function deleteFileOffline(id) {
       try {
         const db = await getDB();
@@ -1059,7 +1059,7 @@
         });
       } catch (err) { console.error('IndexedDB delete error:', err); }
     }
- 
+
     // ===================== STORAGE =====================
     function saveData() {
       localStorage.setItem('gp_proveedores', JSON.stringify(state.proveedores));
@@ -1067,7 +1067,7 @@
       localStorage.setItem('gp_comprobantes', JSON.stringify(state.comprobantes));
       localStorage.setItem('gp_sync_queue', JSON.stringify(syncQueue));
     }
- 
+
     function loadData() {
       state.proveedores = JSON.parse(localStorage.getItem('gp_proveedores') || '[]');
       state.pagos = JSON.parse(localStorage.getItem('gp_pagos') || '[]');
@@ -1077,7 +1077,7 @@
       updateSyncBadge();
       updateStatusDisplay();
     }
- 
+
     function loadSampleData() {
       state.proveedores = [
         { id:'Juan Telas', alias:'Juan Telas', nombre:'Juan Carlos Pérez', cbu:'0000003100012345678901', telefono:'5491155667788', email:'juan@telas.com', deudaTotal:85000, pagado:30000, categoria:'Telas', prioridad:'urgente', fechaInicio:'2025-03-15', condiciones:'30 días', obs:'Paga los viernes' },
@@ -1097,13 +1097,13 @@
       ];
       saveData();
     }
- 
+
     // ===================== UTILS =====================
     function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
     function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
     function fmtDate(d) { if (!d) return '–'; const dt = new Date(d + 'T12:00:00'); return dt.toLocaleDateString('es-AR'); }
     function todayISO() { return new Date().toISOString().slice(0, 10); }
- 
+
     function getEstado(p) {
       const pend = (p.deudaTotal || 0) - (p.pagado || 0);
       if (pend <= 0) return 'dia';
@@ -1115,17 +1115,22 @@
     function getCardClass(e) { return { dia: 'estado-dia', parcial: 'estado-parcial', deuda: 'estado-deuda' }[e]; }
     function getPrioLabel(p) { return { urgente: '🔴 Urgente', normal: '🟡 Normal', sinprisa: '🟢 Sin prisa' }[p] || '🟡 Normal'; }
     function getPrioBadge(p) { return { urgente: 'badge-urgente', normal: 'badge-normal', sinprisa: 'badge-sinprisa' }[p] || 'badge-normal'; }
- 
+
     function cleanPhone(ph) { return (String(ph || '')).replace(/[\s\-\(\)\.]/g, ''); }
     function waUrl(ph) { const c = cleanPhone(ph); return c ? `https://wa.me/${c.startsWith('+') ? c.slice(1) : c}` : ''; }
- 
+    function driveImgUrl(url) {
+      if (!url) return '';
+      const m = url.match(/\/file\/d\/([^/]+)/);
+      return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w400` : url;
+    }
+
     function showToast(msg, type = 'success') {
       const t = document.getElementById('toast');
       t.textContent = msg; t.className = 'toast ' + type;
       t.classList.add('show');
       setTimeout(() => t.classList.remove('show'), 2800);
     }
- 
+
     // ===================== AUTH =====================
     function doLogin() {
       const u = document.getElementById('loginUser').value.trim().toLowerCase();
@@ -1151,7 +1156,7 @@
     document.addEventListener('keydown', e => {
       if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') doLogin();
     });
- 
+
     // ===================== TABS =====================
     function switchTab(btn, section) {
       document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
@@ -1164,10 +1169,10 @@
       if (section === 'comprobantes') renderComprobantes();
       if (section === 'config') loadConfigUI();
     }
- 
+
     // ===================== RENDER ALL =====================
     function renderAll() { renderDashboard(); renderSummary(); renderProveedores(); }
- 
+
     // ===================== DASHBOARD =====================
     function renderDashboard() {
       const total = state.proveedores.reduce((a, p) => a + (p.deudaTotal || 0), 0);
@@ -1177,20 +1182,20 @@
       const conDeuda = state.proveedores.filter(p => getEstado(p) === 'deuda').length;
       const parcial = state.proveedores.filter(p => getEstado(p) === 'parcial').length;
       const alDia = state.proveedores.filter(p => getEstado(p) === 'dia').length;
- 
+
       document.getElementById('dashGrid').innerHTML = `
         <div class="dash-card c-red"><div class="dash-icon">💰</div><div class="dash-val val-red">${fmt(pend)}</div><div class="dash-lbl">Pendiente total</div></div>
         <div class="dash-card c-green"><div class="dash-icon">✅</div><div class="dash-val val-green">${fmt(pagado)}</div><div class="dash-lbl">Total pagado</div></div>
         <div class="dash-card c-accent"><div class="dash-icon">📊</div><div class="dash-val val-accent">${fmt(total)}</div><div class="dash-lbl">Deuda total</div></div>
         <div class="dash-card c-yellow"><div class="dash-icon">👥</div><div class="dash-val val-yellow">${provCount}</div><div class="dash-lbl">Proveedores</div></div>
       `;
- 
+
       document.getElementById('dashStatusChips').innerHTML = `
         <div class="dash-status-chip"><span style="color:var(--red)">🔴</span> ${conDeuda} con deuda</div>
         <div class="dash-status-chip"><span style="color:var(--yellow)">🟡</span> ${parcial} parcial</div>
         <div class="dash-status-chip"><span style="color:var(--green)">✅</span> ${alDia} al día</div>
       `;
- 
+
       // Urgent providers
       const urgents = state.proveedores.filter(p => (p.prioridad === 'urgente') && getEstado(p) !== 'dia');
       const urgentEl = document.getElementById('dashUrgent');
@@ -1207,7 +1212,7 @@
       } else {
         urgentEl.innerHTML = '';
       }
- 
+
       // Recent payments
       const recentPagos = [...state.pagos].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')).slice(0, 5);
       const recentEl = document.getElementById('dashRecent');
@@ -1225,7 +1230,7 @@
         recentEl.innerHTML = `<div class="dash-section-title">📋 Últimos pagos</div><div class="empty-state" style="padding:20px"><div class="empty-state-text">Sin pagos registrados</div></div>`;
       }
     }
- 
+
     function goToProvDetail(alias) {
       document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
       document.querySelector('[data-section="proveedores"]').classList.add('active');
@@ -1233,9 +1238,9 @@
       document.getElementById('sec-proveedores').classList.add('active');
       showDetail(alias);
     }
- 
+
     function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
- 
+
     // ===================== SUMMARY =====================
     function renderSummary() {
       const total = state.proveedores.reduce((a, p) => a + (p.deudaTotal || 0), 0);
@@ -1248,7 +1253,7 @@
         <div class="summary-card"><div class="val val-yellow">${conDeuda}</div><div class="lbl">Con deuda</div></div>
       `;
     }
- 
+
     // ===================== FILTERS =====================
     function setFilter(btn, f) {
       document.querySelectorAll('.filter-chip[data-filter]').forEach(b => b.classList.remove('active'));
@@ -1256,19 +1261,19 @@
       currentFilter = f;
       renderProveedores();
     }
- 
+
     function setPriorityFilter(btn, f) {
       document.querySelectorAll('.filter-chip[data-pfilter]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentPriorityFilter = f;
       renderProveedores();
     }
- 
+
     // ===================== PROVEEDORES LIST =====================
     function renderProveedores() {
       const q = document.getElementById('searchInput').value.toLowerCase();
       const sort = document.getElementById('sortSelect').value;
- 
+
       let list = state.proveedores.filter(p => {
         const match = p.alias.toLowerCase().includes(q) || (p.nombre && p.nombre.toLowerCase().includes(q));
         if (!match) return false;
@@ -1276,7 +1281,7 @@
         if (currentPriorityFilter !== 'todos' && (p.prioridad || 'normal') !== currentPriorityFilter) return false;
         return true;
       });
- 
+
       // Sort
       if (sort === 'deuda') {
         list.sort((a, b) => ((b.deudaTotal - b.pagado) - (a.deudaTotal - a.pagado)));
@@ -1288,13 +1293,13 @@
         const order = { deuda: 0, parcial: 1, dia: 2 };
         list.sort((a, b) => order[getEstado(a)] - order[getEstado(b)] || (b.deudaTotal - b.pagado) - (a.deudaTotal - a.pagado));
       }
- 
+
       const el = document.getElementById('provList');
       if (list.length === 0) {
         el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-text">No hay proveedores que coincidan</div></div>`;
         return;
       }
- 
+
       el.innerHTML = list.map(p => {
         const estado = getEstado(p);
         const pend = (p.deudaTotal || 0) - (p.pagado || 0);
@@ -1303,7 +1308,7 @@
         const prio = p.prioridad || 'normal';
         const isOwner = currentUser && currentUser.role === 'owner';
         const phoneLink = p.telefono ? waUrl(p.telefono) : '';
- 
+
         return `
         <div class="prov-card ${getCardClass(estado)}" onclick="showDetail('${esc(p.alias)}')">
           <div class="prov-header">
@@ -1338,7 +1343,7 @@
         </div>`;
       }).join('');
     }
- 
+
     // ===================== DETAIL VIEW =====================
     function showListView() {
       document.getElementById('provListView').style.display = '';
@@ -1346,23 +1351,23 @@
       currentDetailProvId = null;
       renderAll();
     }
- 
+
     function showDetail(id) {
       const p = state.proveedores.find(x => x.alias === id);
       if (!p) return;
       currentDetailProvId = id;
       document.getElementById('provListView').style.display = 'none';
       document.getElementById('provDetailView').style.display = '';
- 
+
       const estado = getEstado(p);
       const pend = (p.deudaTotal || 0) - (p.pagado || 0);
       const pct = p.deudaTotal > 0 ? Math.round((p.pagado || 0) / p.deudaTotal * 100) : 100;
       const progClass = estado === 'dia' ? 'green' : estado === 'parcial' ? 'yellow' : 'red';
       const prio = p.prioridad || 'normal';
- 
+
       document.getElementById('detailAlias').textContent = p.alias;
       document.getElementById('detailNombre').innerHTML = `${esc(p.nombre || '')} &nbsp;<span class="prov-badge ${getBadgeClass(estado)}">${getEstadoLabel(estado)}</span> <span class="prov-badge ${getPrioBadge(prio)}">${getPrioLabel(prio)}</span>`;
- 
+
       let infoHTML = `
         <div class="detail-info-card" style="grid-column: 1 / -1">
           <div class="dil">Saldo Pendiente</div>
@@ -1374,7 +1379,7 @@
           <div class="dil">CBU / CVU / Alias</div>
           <div class="cbu-row"><div class="div cbu-val">${esc(p.cbu || '–')}</div>${p.cbu ? `<button class="btn-copy" onclick="copyText('${esc(p.cbu)}')">Copiar</button>` : ''}</div>
         </div>`;
- 
+
       if (p.telefono) {
         infoHTML += `<div class="detail-info-card"><div class="dil">Teléfono / WhatsApp</div><div class="div" style="display:flex;align-items:center;gap:8px">${esc(p.telefono)} <a href="${waUrl(p.telefono)}" target="_blank" class="btn btn-sm btn-secondary" style="text-decoration:none;font-size:10px">💬 WhatsApp</a></div></div>`;
       }
@@ -1390,22 +1395,22 @@
       if (p.condiciones) {
         infoHTML += `<div class="detail-info-card"><div class="dil">Condiciones de pago</div><div class="div" style="font-size:13px">${esc(p.condiciones)}</div></div>`;
       }
- 
+
       infoHTML += `
         <div class="detail-info-card" style="grid-column:1/-1">
           <div class="dil">Progreso de pago</div>
           <div style="margin-top:6px;font-size:12px;color:var(--muted);margin-bottom:4px">${pct}% pagado</div>
           <div class="progress-bar" style="height:8px"><div class="progress-fill ${progClass}" style="width:${pct}%"></div></div>
         </div>`;
- 
+
       let obsText = p.obs || '';
       if (obsText.startsWith('[META:')) obsText = decodeMetaObs(obsText).text;
       if (obsText) {
         infoHTML += `<div class="detail-info-card" style="grid-column:1/-1"><div class="dil">Observaciones</div><div class="div" style="font-size:12px;color:var(--text-secondary);white-space:pre-wrap">${esc(obsText)}</div></div>`;
       }
- 
+
       document.getElementById('detailInfoGrid').innerHTML = infoHTML;
- 
+
       // Actions
       const isOwner = currentUser.role === 'owner';
       let actions = `<button class="btn" onclick="openPago('${esc(p.alias)}')">💳 Registrar Pago</button>`;
@@ -1419,7 +1424,7 @@
       renderDetailPagos(p.alias);
       renderDetailComprobantes(p.alias);
     }
- 
+
     function renderDetailPagos(provAlias) {
       const pagos = state.pagos.filter(p => p.provId === provAlias).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
       const el = document.getElementById('detailPagos');
@@ -1427,7 +1432,7 @@
         el.innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-state-icon">💸</div><div class="empty-state-text">Sin pagos registrados aún</div></div>`;
         return;
       }
- 
+
       el.innerHTML = pagos.map(pago => {
         const comps = state.comprobantes.filter(c => c.provAlias === provAlias && Math.abs(c.monto - pago.monto) < 1 && c.fecha === pago.fecha);
         const compsHTML = comps.map(c => {
@@ -1440,12 +1445,12 @@
             return `<a class="comprobante-link" href="${href}" ${isLocal ? '' : 'target="_blank"'}>${isLocal ? '⏳' : '📄'} ${esc(c.name)} ${isLocal ? '(Pendiente)' : ''}</a>`;
           }
         }).join('');
- 
+
         const metaHTML = [];
         if (pago.metodo) metaHTML.push(`<span class="pago-meta-item">💳 ${esc(pago.metodo)}</span>`);
         if (pago.banco) metaHTML.push(`<span class="pago-meta-item">🏦 ${esc(pago.banco)}</span>`);
         if (pago.referencia) metaHTML.push(`<span class="pago-meta-item">🔗 ${esc(pago.referencia)}</span>`);
- 
+
         return `
         <div class="pago-item">
           <div class="pago-header">
@@ -1462,7 +1467,7 @@
       }).join('');
       loadLocalImages();
     }
- 
+
     async function loadLocalImages() {
       document.querySelectorAll('img[data-local-id]').forEach(async img => {
         const localId = img.getAttribute('data-local-id');
@@ -1471,7 +1476,7 @@
         else { img.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'><rect width='60' height='60' fill='%231c2030'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%235e6580' font-family='sans-serif' font-size='10'>Offline</text></svg>"; }
       });
     }
- 
+
     function renderDetailComprobantes(provAlias) {
       const comps = state.comprobantes.filter(c => c.provAlias === provAlias).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
       const el = document.getElementById('detailComps');
@@ -1498,7 +1503,7 @@
       }).join('');
       loadLocalImages();
     }
- 
+
     // ===================== MODAL PROVEEDOR =====================
     function openModal(type) {
       if (type === 'prov') {
@@ -1515,7 +1520,7 @@
         document.getElementById('modalProv').classList.add('open');
       }
     }
- 
+
     function openEditProv(alias) {
       const p = state.proveedores.find(x => x.alias === alias);
       if (!p) return;
@@ -1537,13 +1542,13 @@
       document.getElementById('fProvObs').value = p.obs || '';
       document.getElementById('modalProv').classList.add('open');
     }
- 
+
     function saveProv() {
       const alias = document.getElementById('fProvAlias').value.trim();
       if (!alias) { showToast('El alias es obligatorio', 'error'); return; }
       const deudaTotal = parseFloat(document.getElementById('fProvDeudaTotal').value) || 0;
       const pagado = parseFloat(document.getElementById('fProvPagado').value) || 0;
- 
+
       const telefono = document.getElementById('fProvTel').value.trim();
       const email = document.getElementById('fProvEmail').value.trim();
       const categoria = document.getElementById('fProvCategoria').value;
@@ -1551,7 +1556,7 @@
       const fechaInicio = document.getElementById('fProvFechaInicio').value;
       const condiciones = document.getElementById('fProvCondiciones').value.trim();
       const obsText = document.getElementById('fProvObs').value.trim();
- 
+
       const provData = {
         alias,
         nombre: document.getElementById('fProvNombre').value.trim(),
@@ -1564,7 +1569,7 @@
         condiciones,
         obs: obsText
       };
- 
+
       if (editingProvId) {
         const p = state.proveedores.find(x => x.alias === editingProvId);
         const oldAlias = p.alias;
@@ -1577,7 +1582,7 @@
         const pagoMonto = Math.min(pagado, deudaTotal);
         state.proveedores.push({ id: alias, alias, nombre: provData.nombre, cbu: provData.cbu, telefono, email, deudaTotal, pagado: pagoMonto, categoria, prioridad, fechaInicio, condiciones, obs: obsText });
         queueAction('add_provider', provData);
- 
+
         if (pagoMonto > 0) {
           const pagoId = genId();
           const pagoFecha = fechaInicio || todayISO();
@@ -1603,12 +1608,12 @@
           });
         }
       }
- 
+
       saveData(); closeModal('modalProv'); renderAll();
       if (currentDetailProvId) showDetail(alias);
       showToast(editingProvId ? 'Proveedor actualizado ✓' : 'Proveedor agregado ✓');
     }
- 
+
     function deleteProv(alias) {
       if (!confirm('¿Eliminar este proveedor y todos sus pagos?')) return;
       state.proveedores = state.proveedores.filter(p => p.alias !== alias);
@@ -1617,7 +1622,7 @@
       queueAction('delete_provider', { alias });
       saveData(); showListView(); showToast('Proveedor eliminado', 'error');
     }
- 
+
     // ===================== MODAL DEUDA =====================
     function openDeuda(alias) {
       const p = state.proveedores.find(x => x.alias === alias);
@@ -1628,7 +1633,7 @@
       document.getElementById('fDeudaMotivo').value = '';
       document.getElementById('modalDeuda').classList.add('open');
     }
- 
+
     function saveDeuda() {
       const p = state.proveedores.find(x => x.alias === currentDetailProvId);
       const nueva = parseFloat(document.getElementById('fDeudaTotal').value) || 0;
@@ -1641,7 +1646,7 @@
       queueAction('adjust_debt', { alias: p.alias, deudaTotal: nueva, obs: obsMotivo });
       saveData(); closeModal('modalDeuda'); showDetail(currentDetailProvId); showToast('Deuda ajustada ✓');
     }
- 
+
     // ===================== MODAL PAGO =====================
     function openPago(provAlias) {
       currentDetailProvId = provAlias;
@@ -1661,7 +1666,7 @@
       document.getElementById('filePreview').innerHTML = '';
       document.getElementById('modalPago').classList.add('open');
     }
- 
+
     function handleFiles(event) {
       Array.from(event.target.files).forEach(file => {
         const reader = new FileReader();
@@ -1672,7 +1677,7 @@
         reader.readAsDataURL(file);
       });
     }
- 
+
     function renderFilePreview() {
       document.getElementById('filePreview').innerHTML = pendingFiles.map((f, i) => `
         <div class="file-preview-item">
@@ -1681,11 +1686,11 @@
           <button class="fp-remove" onclick="removePendingFile(${i})">×</button>
         </div>`).join('');
     }
- 
+
     function removePendingFile(i) { pendingFiles.splice(i, 1); renderFilePreview(); }
- 
+
     let pendingCompFiles = [];
- 
+
     function openUploadCompModal() {
       if (!currentDetailProvId) return;
       document.getElementById('uploadCompProvNombre').textContent = currentDetailProvId;
@@ -1696,7 +1701,7 @@
       document.getElementById('filePreviewComp').innerHTML = '';
       document.getElementById('modalUploadComp').classList.add('open');
     }
- 
+
     function handleCompFiles(event) {
       Array.from(event.target.files).forEach(file => {
         const reader = new FileReader();
@@ -1707,7 +1712,7 @@
         reader.readAsDataURL(file);
       });
     }
- 
+
     function renderCompFilePreview() {
       document.getElementById('filePreviewComp').innerHTML = pendingCompFiles.map((f, i) => `
         <div class="file-preview-item">
@@ -1716,9 +1721,9 @@
           <button class="fp-remove" onclick="removePendingCompFile(${i})">×</button>
         </div>`).join('');
     }
- 
+
     function removePendingCompFile(i) { pendingCompFiles.splice(i, 1); renderCompFilePreview(); }
- 
+
     async function saveUploadedComp() {
       const provAlias = currentDetailProvId;
       if (!provAlias) return;
@@ -1726,7 +1731,7 @@
       const monto = parseFloat(document.getElementById('fCompMonto').value) || 0;
       const obs = document.getElementById('fCompObs').value.trim();
       if (!fecha || pendingCompFiles.length === 0) { showToast('Completá la fecha y adjuntá al menos un archivo', 'error'); return; }
- 
+
       const pendingFileIds = [];
       for (const f of pendingCompFiles) {
         const fileId = genId();
@@ -1734,11 +1739,11 @@
         await saveFileOffline(fileId, f.data, f.name, f.mimeType);
         state.comprobantes.push({ id: fileId, pagoId: '', provAlias, name: f.name, data: `local://${fileId}`, type: f.type, fecha, monto });
       }
- 
+
       queueAction('add_document', { provAlias, fecha, monto, obs, pendingFileIds });
       saveData(); closeModal('modalUploadComp'); showDetail(provAlias); showToast('Archivo subido ✓');
     }
- 
+
     async function savePago() {
       const provAlias = currentDetailProvId;
       const p = state.proveedores.find(x => x.alias === provAlias);
@@ -1750,16 +1755,16 @@
       const referencia = document.getElementById('fPagoRef').value.trim();
       const obs = document.getElementById('fPagoObs').value.trim();
       if (!fecha || !monto || monto <= 0) { showToast('Completá fecha y monto', 'error'); return; }
- 
+
       const pend = (p.deudaTotal || 0) - (p.pagado || 0);
       let montoReal = monto;
       if (tipo === 'total') montoReal = pend > 0 ? pend : monto;
       if (montoReal > pend && pend > 0) { showToast(`El monto supera la deuda pendiente (${fmt(pend)})`, 'error'); return; }
- 
+
       const pagoId = genId();
       state.pagos.push({ id: pagoId, provId: provAlias, fecha, tipo, monto: montoReal, metodo, banco, referencia, obs });
       p.pagado = Math.min((p.pagado || 0) + montoReal, p.deudaTotal);
- 
+
       const pendingFileIds = [];
       for (const f of pendingFiles) {
         const fileId = genId();
@@ -1767,14 +1772,14 @@
         await saveFileOffline(fileId, f.data, f.name, f.mimeType);
         state.comprobantes.push({ id: fileId, pagoId, provAlias, name: f.name, data: `local://${fileId}`, type: f.type, fecha, monto: montoReal });
       }
- 
+
       // Build composite obs for Sheets
       const obsForSheet = buildPaymentObs(metodo, referencia, banco, obs);
- 
+
       queueAction('add_payment', { provAlias, fecha, tipo, monto: montoReal, obs: obsForSheet, pendingFileIds });
       saveData(); closeModal('modalPago'); showDetail(provAlias); renderSummary(); showToast('Pago registrado ✓');
     }
- 
+
     // ===================== MOVIMIENTOS =====================
     function setMovFilter(btn, f) {
       document.querySelectorAll('.filter-chip[data-mfilter]').forEach(b => b.classList.remove('active'));
@@ -1782,7 +1787,7 @@
       currentMovFilter = f;
       renderMovimientos();
     }
- 
+
     function renderMovimientos() {
       const q = document.getElementById('movSearch').value.toLowerCase();
       let pagos = state.pagos.filter(p => {
@@ -1791,7 +1796,7 @@
         if (currentMovFilter === 'todos') return true;
         return p.tipo === currentMovFilter;
       }).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
- 
+
       const tbody = document.getElementById('movTableBody');
       if (pagos.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px">Sin movimientos</td></tr>`;
@@ -1806,12 +1811,12 @@
         <td style="color:var(--muted);font-size:11px">${esc(p.obs || '–')}</td>
       </tr>`).join('');
     }
- 
+
     // ===================== COMPROBANTES =====================
     function renderComprobantes() {
       const q = document.getElementById('compSearch').value.toLowerCase();
       let comps = state.comprobantes.filter(c => c.provAlias.toLowerCase().includes(q)).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
- 
+
       const el = document.getElementById('compGrid');
       if (comps.length === 0) {
         el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">📁</div><div class="empty-state-text">No hay comprobantes cargados aún</div></div>`;
@@ -1823,20 +1828,21 @@
         const localId = isLocal ? c.data.substring(8) : '';
         if (c.type === 'image') {
           return `<div class="comp-item" onclick="openLightbox('${c.id}')">
-            <img class="comp-img" src="${isLocal ? '' : c.data}" ${isLocal ? `data-local-id="${localId}"` : ''} alt="${esc(c.name)}">
+            <img class="comp-img" src="${isLocal ? '' : driveImgUrl(c.data)}" ${isLocal ? `data-local-id="${localId}"` : ''} alt="${esc(c.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="display:none;align-items:center;justify-content:center;height:100%;font-size:32px">🖼️</div>
             <div class="comp-info"><div class="comp-info-name">${esc(c.name)}</div><div class="comp-info-date">${esc(c.provAlias)} · ${fmtDate(c.fecha)}</div></div>
+            ${!isLocal ? `<a href="${c.data}" target="_blank" style="display:block;text-align:center;font-size:10px;color:var(--accent);padding:4px 0;text-decoration:none">🔗 Ver en Drive</a>` : ''}
           </div>`;
         } else {
           return `<div class="comp-item">
             <div class="comp-img" style="display:flex;align-items:center;justify-content:center;background:var(--surface2);font-size:32px">📄</div>
             <div class="comp-info"><div class="comp-info-name">${esc(c.name)}</div><div class="comp-info-date">${esc(c.provAlias)} · ${fmtDate(c.fecha)}</div></div>
-            ${isLocal ? `<div style="text-align:center;font-size:10px;color:var(--yellow);padding:4px 0">Pendiente Sync</div>` : `<a href="${c.data}" target="_blank" style="display:block;text-align:center;font-size:10px;color:var(--accent);padding:4px 0;text-decoration:none">Descargar</a>`}
+            ${isLocal ? `<div style="text-align:center;font-size:10px;color:var(--yellow);padding:4px 0">Pendiente Sync</div>` : `<a href="${c.data}" target="_blank" style="display:block;text-align:center;font-size:10px;color:var(--accent);padding:4px 0;text-decoration:none">🔗 Ver en Drive</a>`}
           </div>`;
         }
       }).join('');
       loadLocalImages();
     }
- 
+
     // ===================== LIGHTBOX =====================
     let lightboxCompId = null;
     async function openLightbox(compId) {
@@ -1844,13 +1850,13 @@
       if (!c) return;
       lightboxCompId = compId;
       const imgEl = document.getElementById('lightboxImg');
- 
+
       if (c.type !== 'image') {
         // For PDFs/non-images, open the Drive URL directly
         if (c.data && !c.data.startsWith('local://')) { window.open(c.data, '_blank'); }
         return;
       }
- 
+
       if (c.data && c.data.startsWith('local://')) {
         const fileData = await getFileOffline(c.data.substring(8));
         imgEl.src = fileData ? fileData.base64 : '';
@@ -1859,13 +1865,13 @@
       }
       document.getElementById('lightbox').classList.add('open');
     }
- 
+
     function closeLightbox() {
       document.getElementById('lightbox').classList.remove('open');
       document.getElementById('lightboxImg').src = '';
       lightboxCompId = null;
     }
- 
+
     async function downloadLightbox() {
       const c = state.comprobantes.find(x => x.id === lightboxCompId);
       if (!c) return;
@@ -1876,18 +1882,18 @@
       }
       const a = document.createElement('a'); a.href = downloadUrl; a.download = c.name; a.click();
     }
- 
+
     document.getElementById('lightbox').addEventListener('click', e => {
       if (e.target === document.getElementById('lightbox')) closeLightbox();
     });
- 
+
     // ===================== CONFIG & SYNC =====================
     function loadConfigUI() {
       document.getElementById('cfgSheetUrl').value = sheetUrl;
       document.getElementById('cfgSheetToken').value = sheetToken;
       updateStatusDisplay();
     }
- 
+
     function saveConfig() {
       sheetUrl = document.getElementById('cfgSheetUrl').value.trim();
       sheetToken = document.getElementById('cfgSheetToken').value.trim();
@@ -1895,7 +1901,7 @@
       localStorage.setItem('gp_sheet_token', sheetToken);
       updateSyncBadge(); updateStatusDisplay();
     }
- 
+
     function clearLocalConfig() {
       if (confirm('¿Desconectar la planilla de Google Sheets? Tus datos locales se conservarán.')) {
         sheetUrl = ''; sheetToken = '';
@@ -1906,7 +1912,7 @@
         showToast('Planilla desconectada', 'error');
       }
     }
- 
+
     function updateStatusDisplay() {
       const ns = document.getElementById('netStatusVal');
       const qc = document.getElementById('queueCountVal');
@@ -1915,20 +1921,20 @@
       if (qc) qc.textContent = `${syncQueue.length} acciones pendientes`;
       if (ls) ls.textContent = lastSyncTime;
     }
- 
+
     function queueAction(action, data) {
       syncQueue.push({ id: genId(), action, data, timestamp: Date.now() });
       saveData(); updateSyncBadge(); updateStatusDisplay();
       if (navigator.onLine && sheetUrl && !isSyncing) syncWithSheet();
     }
- 
+
     async function syncWithSheet() {
       if (isSyncing) return;
       if (!sheetUrl) { showToast('Configurá la URL de Google Sheets en Ajustes', 'error'); updateSyncBadge('unconfigured'); return; }
- 
+
       isSyncing = true;
       updateSyncBadge('syncing'); updateStatusDisplay();
- 
+
       try {
         // 1. Process sync queue
         if (syncQueue.length > 0) {
@@ -1944,12 +1950,12 @@
             }
             queueToSend.push(payloadItem);
           }
- 
+
           const response = await fetch(`${sheetUrl}?token=${encodeURIComponent(sheetToken)}`, {
             method: 'POST', headers: { 'Content-Type': 'text/plain' }, redirect: 'follow',
             body: JSON.stringify({ action: 'sync_queue', data: { queue: queueToSend } })
           });
- 
+
           const resJson = await response.json();
           if (resJson.status === 'success') {
             for (const item of syncQueue) {
@@ -1960,23 +1966,23 @@
             syncQueue = []; saveData();
           } else { throw new Error(resJson.message || 'Error procesando cola'); }
         }
- 
+
         // 2. Download fresh state from Sheets
         const response = await fetch(`${sheetUrl}?token=${encodeURIComponent(sheetToken)}`, { method: 'GET', redirect: 'follow' });
         const resJson = await response.json();
- 
+
         if (resJson.status === 'success') {
           state.proveedores = resJson.proveedores.map(p => {
             return {
               id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
-              telefono: p.telefono || '', email: p.email || '',
+              telefono: p.telefono !== undefined && p.telefono !== null ? String(p.telefono) : '', email: p.email || '',
               deudaTotal: Number(p.deudaTotal) || 0, pagado: Number(p.pagado) || 0,
               categoria: p.categoria || '', prioridad: p.prioridad || 'normal',
               fechaInicio: p.fechaInicio || '', condiciones: p.condiciones || '',
               obs: p.obs || ''
             };
           });
- 
+
           state.pagos = resJson.movimientos.map(m => {
             const parsed = parsePaymentObs(m.obs);
             return {
@@ -1984,13 +1990,13 @@
               metodo: parsed.metodo, referencia: parsed.referencia, banco: parsed.banco, obs: parsed.texto
             };
           });
- 
+
           state.comprobantes = resJson.comprobantes.map(c => ({
             id: genId(), pagoId: '', provAlias: c.provAlias, name: c.name,
             data: c.url, type: c.tipo === 'Captura/Foto' ? 'image' : 'pdf',
             fecha: c.fecha, monto: c.monto
           }));
- 
+
           lastSyncTime = new Date().toLocaleTimeString() + ' ' + new Date().toLocaleDateString();
           localStorage.setItem('gp_last_sync', lastSyncTime);
           saveData(); renderAll();
@@ -2005,7 +2011,7 @@
         isSyncing = false; updateStatusDisplay();
       }
     }
- 
+
     function updateSyncBadge(status) {
       const badge = document.getElementById('syncBadge');
       if (!badge) return;
@@ -2025,7 +2031,7 @@
         else { dot.className = 'sync-dot connected'; txt.textContent = 'Conectado'; }
       }
     }
- 
+
     // ===================== CONNECTIVITY =====================
     window.addEventListener('online', () => {
       showToast('Conexión restaurada'); updateStatusDisplay(); updateSyncBadge();
@@ -2034,12 +2040,12 @@
     window.addEventListener('offline', () => {
       showToast('Trabajando en modo offline', 'error'); updateStatusDisplay(); updateSyncBadge('error');
     });
- 
+
     // ===================== MISC =====================
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
     function copyText(txt) { navigator.clipboard.writeText(txt).then(() => showToast('Copiado ✓')).catch(() => showToast('No se pudo copiar', 'error')); }
     document.querySelectorAll('.modal-overlay').forEach(m => { m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }); });
- 
+
     // Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -2048,7 +2054,7 @@
           .catch(err => console.error('SW error:', err));
       });
     }
- 
+
     // Auto-login Pablo Castillo
     function autoLogin() {
       currentUser = { username: 'pablo castillo', ...USERS['pablo castillo'] };
@@ -2061,5 +2067,5 @@
     autoLogin();
   </script>
 </body>
- 
+
 </html>

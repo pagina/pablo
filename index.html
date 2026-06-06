@@ -934,63 +934,49 @@
   <div class="toast" id="toast"></div>
 
   <!-- ==================== FIREBASE ==================== -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
-      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, writeBatch }
-      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPA_URL = 'https://cgfynknolatafeimgboe.supabase.co';
+    const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZnlua25vbGF0YWZlaW1nYm9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2ODAzMzEsImV4cCI6MjA5NjI1NjMzMX0.E7SMM9QzM__08hAOOM0RQhocR3VhuHk77lAj11A_w1s';
+    const _supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyB8pi51bWGOxXRVRz58bALBVJtda7-F6UU",
-      authDomain: "gestorpro-4019c.firebaseapp.com",
-      projectId: "gestorpro-4019c",
-      storageBucket: "gestorpro-4019c.firebasestorage.app",
-      messagingSenderId: "781436148283",
-      appId: "1:781436148283:web:fe054b7486be20f5c05a1e"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const provider = new GoogleAuthProvider();
-
-    // Expose to global scope for non-module functions
-    window._fbAuth = auth;
-    window._fbDb = db;
-    window._fbProvider = provider;
-    window._fbSignOut = signOut;
-    window._fbOnAuth = onAuthStateChanged;
-    window._fbDoc = doc;
-    window._fbGetDoc = getDoc;
-    window._fbSetDoc = setDoc;
-    window._fbOnSnapshot = onSnapshot;
-    window._fbCollection = collection;
-    window._fbWriteBatch = writeBatch;
-    window._fbSignInWithPopup = signInWithPopup;
-
-    // Listen for auth state
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        window.currentUser = {
-          username: user.email,
-          label: user.displayName || user.email,
-          role: 'owner',  // All Google users are owners; add role logic later if needed
-          uid: user.uid,
-          photoURL: user.photoURL
-        };
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('app').style.display = 'flex';
-        document.getElementById('userBadge').textContent = window.currentUser.label;
-        await window.loadDataFromFirebase();
-        window.renderAll();
-        if (window.sheetUrl && navigator.onLine) window.syncWithSheet();
+    // Init Google login via Supabase Auth
+    async function initSupabaseAuth() {
+      const { data: { session } } = await _supa.auth.getSession();
+      if (session?.user) {
+        handleSupaUser(session.user);
       } else {
-        window.currentUser = null;
         document.getElementById('loginScreen').style.display = 'flex';
         document.getElementById('app').style.display = 'none';
       }
-    });
+      _supa.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+          handleSupaUser(session.user);
+        } else {
+          window.currentUser = null;
+          document.getElementById('loginScreen').style.display = 'flex';
+          document.getElementById('app').style.display = 'none';
+        }
+      });
+    }
+
+    async function handleSupaUser(user) {
+      window.currentUser = {
+        username: user.email,
+        label: user.user_metadata?.full_name || user.email,
+        role: 'owner',
+        uid: user.id,
+        photoURL: user.user_metadata?.avatar_url
+      };
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      document.getElementById('userBadge').textContent = window.currentUser.label;
+      await window.loadDataFromSupabase();
+      window.renderAll();
+      if (window.sheetUrl && navigator.onLine) window.syncWithSheet();
+    }
+
+    initSupabaseAuth();
   </script>
 
   <!-- ==================== JAVASCRIPT ==================== -->
@@ -1008,20 +994,23 @@
 
     const state = { proveedores: [], pagos: [], comprobantes: [] };
 
-    // URL y token fijos — no dependen de localStorage ni Firebase
+    // URL y token fijos
     let sheetUrl = 'https://script.google.com/macros/s/AKfycbz51zNJ-99sckD8vrhZ59cetqQ5G4KI3NqyNSubS2DblIOy9tX-zZ0sFsyo5idzw7A/exec';
     let sheetToken = 'gestorpro123';
     let syncQueue = [];
     let isSyncing = false;
     let lastSyncTime = localStorage.getItem('gp_last_sync') || 'Nunca';
 
-    // ===================== FIREBASE AUTH =====================
+    // ===================== SUPABASE AUTH =====================
     async function doGoogleLogin() {
       const err = document.getElementById('loginError');
       err.style.display = 'none';
       try {
-        await window._fbSignInWithPopup(window._fbAuth, window._fbProvider);
-        // onAuthStateChanged handles the rest
+        const { error } = await _supa.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: window.location.href }
+        });
+        if (error) throw error;
       } catch (e) {
         console.error('Login error:', e);
         err.style.display = 'block';
@@ -1029,29 +1018,10 @@
     }
 
     async function doLogout() {
-      await window._fbSignOut(window._fbAuth);
+      await _supa.auth.signOut();
     }
 
-    // ===================== FIREBASE STORAGE =====================
-    const FB_DOC = 'gestorpro/data';
-
-    async function saveDataToFirebase() {
-      try {
-        const docRef = window._fbDoc(window._fbDb, 'gestorpro', 'data');
-        await window._fbSetDoc(docRef, {
-          proveedores: state.proveedores,
-          pagos: state.pagos,
-          comprobantes: state.comprobantes,
-          syncQueue,
-          lastUpdated: Date.now()
-        });
-      } catch (err) {
-        console.error('Firebase save error:', err);
-        // Fallback to localStorage
-        saveDataLocal();
-      }
-    }
-
+    // ===================== SUPABASE DATA =====================
     function saveDataLocal() {
       localStorage.setItem('gp_proveedores', JSON.stringify(state.proveedores));
       localStorage.setItem('gp_pagos', JSON.stringify(state.pagos));
@@ -1059,43 +1029,95 @@
       localStorage.setItem('gp_sync_queue', JSON.stringify(syncQueue));
     }
 
-    function saveData() {
-      saveDataLocal(); // Always save locally for offline
-      saveDataToFirebase(); // Also push to Firebase
+    async function saveData() {
+      saveDataLocal();
+      await saveDataToSupabase();
     }
 
-    async function loadDataFromFirebase() {
+    async function saveDataToSupabase() {
       try {
-        const docRef = window._fbDoc(window._fbDb, 'gestorpro', 'data');
-        const snap = await window._fbGetDoc(docRef);
-        if (snap.exists()) {
-          const d = snap.data();
-          state.proveedores = d.proveedores || [];
-          state.pagos = d.pagos || [];
-          state.comprobantes = d.comprobantes || [];
-          syncQueue = d.syncQueue || [];
-          // Load shared config so all users get URL+token automatically
-          if (d.sheetUrl) { sheetUrl = d.sheetUrl; localStorage.setItem('gp_sheet_url', sheetUrl); window.sheetUrl = sheetUrl; }
-          if (d.sheetToken) { sheetToken = d.sheetToken; localStorage.setItem('gp_sheet_token', sheetToken); }
-          saveDataLocal();
+        // Upsert proveedores
+        if (state.proveedores.length > 0) {
+          const rows = state.proveedores.map(p => ({
+            id: p.alias, alias: p.alias, nombre: p.nombre || '', cbu: p.cbu || '',
+            telefono: p.telefono || '', email: p.email || '',
+            deuda_total: p.deudaTotal || 0, pagado: p.pagado || 0,
+            categoria: p.categoria || '', prioridad: p.prioridad || 'normal',
+            fecha_inicio: p.fechaInicio || '', condiciones: p.condiciones || '', obs: p.obs || ''
+          }));
+          await _supa.from('proveedores').upsert(rows, { onConflict: 'id' });
+        }
+        // Upsert pagos
+        if (state.pagos.length > 0) {
+          const rows = state.pagos.map(p => ({
+            id: p.id, prov_id: p.provId, fecha: p.fecha, tipo: p.tipo,
+            monto: p.monto, metodo: p.metodo || '', banco: p.banco || '',
+            referencia: p.referencia || '', obs: p.obs || ''
+          }));
+          await _supa.from('pagos').upsert(rows, { onConflict: 'id' });
+        }
+        // Upsert comprobantes (sin base64 — solo metadata y URL)
+        const compsToSave = state.comprobantes.filter(c => !c.data?.startsWith('local://'));
+        if (compsToSave.length > 0) {
+          const rows = compsToSave.map(c => ({
+            id: c.id, pago_id: c.pagoId || '', prov_alias: c.provAlias,
+            name: c.name, url: c.data || '', type: c.type,
+            fecha: c.fecha, monto: c.monto || 0
+          }));
+          await _supa.from('comprobantes').upsert(rows, { onConflict: 'id' });
+        }
+      } catch (err) {
+        console.error('Supabase save error:', err);
+      }
+    }
+
+    async function loadDataFromSupabase() {
+      try {
+        const [provRes, pagosRes, compRes] = await Promise.all([
+          _supa.from('proveedores').select('*'),
+          _supa.from('pagos').select('*'),
+          _supa.from('comprobantes').select('*')
+        ]);
+
+        if (provRes.data && provRes.data.length > 0) {
+          state.proveedores = provRes.data.map(p => ({
+            id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
+            telefono: p.telefono, email: p.email,
+            deudaTotal: Number(p.deuda_total) || 0, pagado: Number(p.pagado) || 0,
+            categoria: p.categoria, prioridad: p.prioridad || 'normal',
+            fechaInicio: p.fecha_inicio, condiciones: p.condiciones, obs: p.obs
+          }));
         } else {
           loadDataLocal();
         }
-        // Real-time listener for live updates from other users
-        window._fbOnSnapshot(docRef, (snap) => {
-          if (snap.exists() && snap.metadata.hasPendingWrites === false) {
-            const d = snap.data();
-            state.proveedores = d.proveedores || [];
-            state.pagos = d.pagos || [];
-            state.comprobantes = d.comprobantes || [];
-            if (d.sheetUrl) { sheetUrl = d.sheetUrl; window.sheetUrl = sheetUrl; }
-            if (d.sheetToken) { sheetToken = d.sheetToken; }
-            saveDataLocal();
-            renderAll();
-          }
-        });
+
+        if (pagosRes.data) {
+          state.pagos = pagosRes.data.map(p => ({
+            id: p.id, provId: p.prov_id, fecha: p.fecha, tipo: p.tipo,
+            monto: Number(p.monto) || 0, metodo: p.metodo,
+            banco: p.banco, referencia: p.referencia, obs: p.obs
+          }));
+        }
+
+        if (compRes.data) {
+          state.comprobantes = compRes.data.map(c => ({
+            id: c.id, pagoId: c.pago_id, provAlias: c.prov_alias,
+            name: c.name, data: c.url, type: c.type,
+            fecha: c.fecha, monto: Number(c.monto) || 0
+          }));
+        }
+
+        saveDataLocal();
+
+        // Real-time updates
+        _supa.channel('db-changes')
+          .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+            loadDataFromSupabase().then(() => renderAll());
+          })
+          .subscribe();
+
       } catch (err) {
-        console.error('Firebase load error, using local:', err);
+        console.error('Supabase load error, using local:', err);
         loadDataLocal();
       }
       updateSyncBadge();
@@ -1112,6 +1134,8 @@
 
     // Keep loadData as alias for backward compat
     function loadData() { loadDataLocal(); updateSyncBadge(); updateStatusDisplay(); }
+    // Alias for Firebase calls still in code
+    async function loadDataFromFirebase() { return loadDataFromSupabase(); }
 
     // ===================== META ENCODING =====================
     function encodeMetaObs(meta, freeText) {
@@ -1180,14 +1204,44 @@
 
     async function saveFileOffline(id, base64, name, mimeType) {
       try {
-        const db = await getDB();
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction(STORE_NAME, 'readwrite');
-          tx.objectStore(STORE_NAME).put({ id, base64, name, mimeType });
-          tx.oncomplete = () => resolve(true);
-          tx.onerror = () => reject(tx.error);
-        });
-      } catch (err) { console.error('IndexedDB save error:', err); }
+        // Upload to Supabase Storage
+        const base64Data = base64.split(',')[1];
+        const byteChars = atob(base64Data);
+        const byteArr = new Uint8Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+        const blob = new Blob([byteArr], { type: mimeType });
+        const ext = name.split('.').pop() || 'jpg';
+        const path = `comprobantes/${id}.${ext}`;
+        const { data, error } = await _supa.storage.from('comprobantes').upload(path, blob, { contentType: mimeType, upsert: true });
+        if (error) throw error;
+        const { data: urlData } = _supa.storage.from('comprobantes').getPublicUrl(path);
+        // Update the comprobante data to use the public URL
+        const comp = state.comprobantes.find(c => c.id === id);
+        if (comp) comp.data = urlData.publicUrl;
+        // Also save to IndexedDB as fallback
+        try {
+          const db = await getDB();
+          await new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            tx.objectStore(STORE_NAME).put({ id, base64, name, mimeType });
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => reject(tx.error);
+          });
+        } catch(e) {}
+        return urlData.publicUrl;
+      } catch (err) {
+        console.error('Storage upload error, saving locally:', err);
+        // Fallback to IndexedDB
+        try {
+          const db = await getDB();
+          return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            tx.objectStore(STORE_NAME).put({ id, base64, name, mimeType });
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => reject(tx.error);
+          });
+        } catch(e2) { console.error('IndexedDB save error:', e2); }
+      }
     }
 
     async function getFileOffline(id) {
@@ -1212,14 +1266,6 @@
           tx.onerror = () => reject(tx.error);
         });
       } catch (err) { console.error('IndexedDB delete error:', err); }
-    }
-
-    // ===================== STORAGE =====================
-    function saveData() {
-      localStorage.setItem('gp_proveedores', JSON.stringify(state.proveedores));
-      localStorage.setItem('gp_pagos', JSON.stringify(state.pagos));
-      localStorage.setItem('gp_comprobantes', JSON.stringify(state.comprobantes));
-      localStorage.setItem('gp_sync_queue', JSON.stringify(syncQueue));
     }
 
     function loadSampleData() {
@@ -2040,14 +2086,6 @@
       localStorage.setItem('gp_sheet_url', sheetUrl);
       localStorage.setItem('gp_sheet_token', sheetToken);
       window.sheetUrl = sheetUrl;
-      // Save config to Firebase so all users get it automatically
-      try {
-        const docRef = window._fbDoc(window._fbDb, 'gestorpro', 'data');
-        const updates = {};
-        if (sheetUrl) updates.sheetUrl = sheetUrl;
-        if (sheetToken) updates.sheetToken = sheetToken;
-        if (Object.keys(updates).length > 0) window._fbSetDoc(docRef, updates, { merge: true });
-      } catch(e) { console.error('Config save error:', e); }
       updateSyncBadge(); updateStatusDisplay();
       showToast('Configuración guardada y sincronizada ✓');
     }
@@ -2214,7 +2252,8 @@
       });
     }
 
-    // Expose to window for Firebase module access
+    // Expose to window
+    window.loadDataFromSupabase = loadDataFromSupabase;
     window.loadDataFromFirebase = loadDataFromFirebase;
     window.renderAll = renderAll;
     window.syncWithSheet = syncWithSheet;

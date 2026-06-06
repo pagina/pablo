@@ -2042,7 +2042,10 @@
       // Save config to Firebase so all users get it automatically
       try {
         const docRef = window._fbDoc(window._fbDb, 'gestorpro', 'data');
-        window._fbSetDoc(docRef, { sheetUrl, sheetToken }, { merge: true });
+        const updates = {};
+        if (sheetUrl) updates.sheetUrl = sheetUrl;
+        if (sheetToken) updates.sheetToken = sheetToken;
+        if (Object.keys(updates).length > 0) window._fbSetDoc(docRef, updates, { merge: true });
       } catch(e) { console.error('Config save error:', e); }
       updateSyncBadge(); updateStatusDisplay();
       showToast('Configuración guardada y sincronizada ✓');
@@ -2220,5 +2223,4 @@
   </script>
 </body>
 
-</html>
 </html>

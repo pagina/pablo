@@ -1073,19 +1073,22 @@
           state.pagos = d.pagos || [];
           state.comprobantes = d.comprobantes || [];
           syncQueue = d.syncQueue || [];
+          // Load shared config so all users get URL+token automatically
+          if (d.sheetUrl) { sheetUrl = d.sheetUrl; localStorage.setItem('gp_sheet_url', sheetUrl); window.sheetUrl = sheetUrl; }
+          if (d.sheetToken) { sheetToken = d.sheetToken; localStorage.setItem('gp_sheet_token', sheetToken); }
           saveDataLocal();
         } else {
-          // First time — load local or sample
           loadDataLocal();
         }
-        // Set up real-time listener for live updates from other users
+        // Real-time listener for live updates from other users
         window._fbOnSnapshot(docRef, (snap) => {
           if (snap.exists() && snap.metadata.hasPendingWrites === false) {
             const d = snap.data();
             state.proveedores = d.proveedores || [];
             state.pagos = d.pagos || [];
             state.comprobantes = d.comprobantes || [];
-            // Don't override syncQueue from server (it's local-only)
+            if (d.sheetUrl) { sheetUrl = d.sheetUrl; window.sheetUrl = sheetUrl; }
+            if (d.sheetToken) { sheetToken = d.sheetToken; }
             saveDataLocal();
             renderAll();
           }
@@ -2035,7 +2038,14 @@
       sheetToken = document.getElementById('cfgSheetToken').value.trim();
       localStorage.setItem('gp_sheet_url', sheetUrl);
       localStorage.setItem('gp_sheet_token', sheetToken);
+      window.sheetUrl = sheetUrl;
+      // Save config to Firebase so all users get it automatically
+      try {
+        const docRef = window._fbDoc(window._fbDb, 'gestorpro', 'data');
+        window._fbSetDoc(docRef, { sheetUrl, sheetToken }, { merge: true });
+      } catch(e) { console.error('Config save error:', e); }
       updateSyncBadge(); updateStatusDisplay();
+      showToast('Configuración guardada y sincronizada ✓');
     }
 
     function clearLocalConfig() {

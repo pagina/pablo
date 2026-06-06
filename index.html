@@ -1120,8 +1120,14 @@
     function waUrl(ph) { const c = cleanPhone(ph); return c ? `https://wa.me/${c.startsWith('+') ? c.slice(1) : c}` : ''; }
     function driveImgUrl(url) {
       if (!url) return '';
-      const m = url.match(/\/file\/d\/([^/]+)/);
+      const m = url.match(/\/file\/d\/([^\/]+)/);
       return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w400` : url;
+    }
+    function parseMonto(str) {
+      if (!str && str !== 0) return 0;
+      // Eliminar puntos de miles y reemplazar coma decimal por punto
+      const clean = String(str).replace(/\./g, '').replace(',', '.');
+      return parseFloat(clean) || 0;
     }
 
     function showToast(msg, type = 'success') {
@@ -1546,8 +1552,8 @@
     function saveProv() {
       const alias = document.getElementById('fProvAlias').value.trim();
       if (!alias) { showToast('El alias es obligatorio', 'error'); return; }
-      const deudaTotal = parseFloat(document.getElementById('fProvDeudaTotal').value) || 0;
-      const pagado = parseFloat(document.getElementById('fProvPagado').value) || 0;
+      const deudaTotal = parseMonto(document.getElementById('fProvDeudaTotal').value);
+      const pagado = parseMonto(document.getElementById('fProvPagado').value);
 
       const telefono = document.getElementById('fProvTel').value.trim();
       const email = document.getElementById('fProvEmail').value.trim();
@@ -1636,7 +1642,7 @@
 
     function saveDeuda() {
       const p = state.proveedores.find(x => x.alias === currentDetailProvId);
-      const nueva = parseFloat(document.getElementById('fDeudaTotal').value) || 0;
+      const nueva = parseMonto(document.getElementById('fDeudaTotal').value);
       const motivo = document.getElementById('fDeudaMotivo').value.trim();
       if (!p) return;
       if (nueva < (p.pagado || 0)) { showToast('La deuda total no puede ser menor a lo pagado', 'error'); return; }
@@ -1749,7 +1755,7 @@
       const p = state.proveedores.find(x => x.alias === provAlias);
       const fecha = document.getElementById('fPagoFecha').value;
       const tipo = document.getElementById('fPagoTipo').value;
-      const monto = parseFloat(document.getElementById('fPagoMonto').value);
+      const monto = parseMonto(document.getElementById('fPagoMonto').value);
       const metodo = document.getElementById('fPagoMetodo').value;
       const banco = document.getElementById('fPagoBanco').value.trim();
       const referencia = document.getElementById('fPagoRef').value.trim();
@@ -1828,7 +1834,7 @@
         const localId = isLocal ? c.data.substring(8) : '';
         if (c.type === 'image') {
           return `<div class="comp-item" onclick="openLightbox('${c.id}')">
-            <img class="comp-img" src="${isLocal ? '' : driveImgUrl(c.data)}" ${isLocal ? `data-local-id="${localId}"` : ''} alt="${esc(c.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="display:none;align-items:center;justify-content:center;height:100%;font-size:32px">🖼️</div>
+            <img class="comp-img" src="${isLocal ? '' : driveImgUrl(c.data)}" ${isLocal ? `data-local-id="${localId}"` : ''} alt="${esc(c.name)}" onerror="this.style.display='none'">
             <div class="comp-info"><div class="comp-info-name">${esc(c.name)}</div><div class="comp-info-date">${esc(c.provAlias)} · ${fmtDate(c.fecha)}</div></div>
             ${!isLocal ? `<a href="${c.data}" target="_blank" style="display:block;text-align:center;font-size:10px;color:var(--accent);padding:4px 0;text-decoration:none">🔗 Ver en Drive</a>` : ''}
           </div>`;

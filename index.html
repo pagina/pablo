@@ -1979,24 +1979,33 @@
         const resJson = await response.json();
 
         if (resJson.status === 'success') {
-          state.proveedores = resJson.proveedores.map(p => {
-            return {
-              id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
-              telefono: p.telefono !== undefined && p.telefono !== null ? String(p.telefono) : '', email: p.email || '',
-              deudaTotal: Number(p.deudaTotal) || 0, pagado: Number(p.pagado) || 0,
-              categoria: p.categoria || '', prioridad: p.prioridad || 'normal',
-              fechaInicio: p.fechaInicio || '', condiciones: p.condiciones || '',
-              obs: p.obs || ''
-            };
-          });
-
-          state.pagos = resJson.movimientos.map(m => {
+          // Procesar movimientos primero para calcular pagado real
+          const pagosSync = resJson.movimientos.map(m => {
             const parsed = parsePaymentObs(m.obs);
             return {
               id: genId(), provId: m.provAlias, fecha: m.fecha, tipo: m.tipo, monto: m.monto,
               metodo: parsed.metodo, referencia: parsed.referencia, banco: parsed.banco, obs: parsed.texto
             };
           });
+
+          state.proveedores = resJson.proveedores.map(p => {
+            // Sumar pagos reales de movimientos para ese proveedor
+            const pagadoReal = pagosSync
+              .filter(mv => mv.provId === p.alias)
+              .reduce((sum, mv) => sum + (Number(mv.monto) || 0), 0);
+            // Usar el mayor entre lo que calcula Sheets y los movimientos
+            const pagadoFinal = Math.max(Number(p.pagado) || 0, pagadoReal);
+            return {
+              id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
+              telefono: p.telefono !== undefined && p.telefono !== null ? String(p.telefono) : '', email: p.email || '',
+              deudaTotal: Number(p.deudaTotal) || 0, pagado: pagadoFinal,
+              categoria: p.categoria || '', prioridad: p.prioridad || 'normal',
+              fechaInicio: p.fechaInicio || '', condiciones: p.condiciones || '',
+              obs: p.obs || ''
+            };
+          });
+
+          state.pagos = pagosSync;
 
           state.comprobantes = resJson.comprobantes.map(c => ({
             id: genId(), pagoId: '', provAlias: c.provAlias, name: c.name,

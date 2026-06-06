@@ -32,6 +32,16 @@ function jsonResponse(obj) {
 }
 
 /**
+ * Convierte un valor de celda a número de forma segura.
+ * Si la celda tiene un error de fórmula (#ERROR!, #REF!, etc.) o un valor no numérico, retorna 0.
+ */
+function safeNum(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  var n = Number(v);
+  return isNaN(n) ? 0 : n;
+}
+
+/**
  * ENDPOINT GET: Obtiene toda la información de la planilla
  */
 function doGet(e) {
@@ -47,25 +57,53 @@ function doGet(e) {
     
     // 1. LEER PROVEEDORES
     const sheetProv = doc.getSheetByName("Proveedores");
-    const provRange = sheetProv.getRange(6, 1, sheetProv.getLastRow() - 5, 11);
+    ensureExtraHeaders(sheetProv);
+    const provRange = sheetProv.getRange(6, 1, sheetProv.getLastRow() - 5, 15);
     const provValues = provRange.getValues();
     const proveedores = [];
     
     for (let i = 0; i < provValues.length; i++) {
       const row = provValues[i];
       if (row[0]) { // Verificar que exista alias
+        let obsVal = row[10] || '';
+        let cat = row[11] || '';
+        let pri = row[12] || 'normal';
+        let fechaInicio = row[13] || '';
+        let condiciones = row[14] || '';
+        
+        // Decodificar META legacy si existe en las observaciones
+        if (obsVal.startsWith('[META:')) {
+          const decoded = decodeMetaObs(obsVal);
+          cat = decoded.meta.cat || cat;
+          pri = decoded.meta.pri || pri;
+          fechaInicio = decoded.meta.fechaInicio || fechaInicio;
+          condiciones = decoded.meta.cond || condiciones;
+          obsVal = decoded.text;
+        }
+        
+        // Asegurar que la fecha sea string YYYY-MM-DD
+        if (fechaInicio instanceof Date) {
+          fechaInicio = fechaInicio.toISOString().slice(0, 10);
+        } else if (fechaInicio) {
+          fechaInicio = String(fechaInicio).slice(0, 10);
+        }
+        
         proveedores.push({
           alias: row[0],
           nombre: row[1],
           cbu: row[2],
           telefono: row[3],
           email: row[4],
-          deudaTotal: Number(row[5] || 0),
-          pagado: Number(row[6] || 0),
-          pendiente: Number(row[7] || 0),
-          pctPagado: Number(row[8] || 0),
+          deudaTotal: safeNum(row[5]),
+          pagado: safeNum(row[6]),
+          pendiente: safeNum(row[7]),
+          pctPagado: safeNum(row[8]),
           estado: row[9],
-          obs: row[10]
+          obs: obsVal,
+          categoria: cat,
+          prioridad: pri,
+          fechaInicio: fechaInicio,
+          condiciones: condiciones
         });
       }
     }
@@ -84,8 +122,8 @@ function doGet(e) {
             provAlias: row[1],
             provNombre: row[2],
             tipo: row[3] === "Pago total" ? "total" : "parcial",
-            monto: Number(row[4] || 0),
-            pendiente: Number(row[5] || 0),
+            monto: safeNum(row[4]),
+            pendiente: safeNum(row[5]),
             comprobante: row[6],
             obs: row[7]
           });
@@ -105,7 +143,7 @@ function doGet(e) {
           comprobantes.push({
             fecha: row[0] ? (row[0] instanceof Date ? row[0].toISOString().slice(0,10) : String(row[0]).slice(0,10)) : "",
             provAlias: row[1],
-            monto: Number(row[2] || 0),
+            monto: safeNum(row[2]),
             tipo: row[3],
             name: row[4],
             url: row[5],
@@ -147,6 +185,8 @@ function doPost(e) {
       const nextRow = sheet.getLastRow() + 1;
       const sep = getFormulaSeparator();
       
+      ensureExtraHeaders(sheet);
+      
       // Creamos la fila
       sheet.getRange(nextRow, 1).setValue(data.alias); // A
       sheet.getRange(nextRow, 2).setValue(data.nombre || ""); // B
@@ -161,6 +201,10 @@ function doPost(e) {
       sheet.getRange(nextRow, 9).setFormula(`=IFERROR(IF(F${nextRow}>0${sep} G${nextRow}/F${nextRow}${sep} 1)${sep} 1)`); // % Pagado
       sheet.getRange(nextRow, 10).setFormula(`=IFERROR(IF(H${nextRow}<=0${sep} "✅ Al día"${sep} IF(G${nextRow}>0${sep} "🟡 Deuda parcial"${sep} "🔴 Con deuda"))${sep} "")`); // J (Estado)
       sheet.getRange(nextRow, 11).setValue(data.obs || ""); // K
+      sheet.getRange(nextRow, 12).setValue(data.categoria || ""); // L
+      sheet.getRange(nextRow, 13).setValue(data.prioridad || "normal"); // M
+      sheet.getRange(nextRow, 14).setValue(data.fechaInicio || ""); // N
+      sheet.getRange(nextRow, 15).setValue(data.condiciones || ""); // O
       
       return jsonResponse({ status: "success", message: "Proveedor creado con éxito." });
     }
@@ -182,6 +226,8 @@ function doPost(e) {
         return jsonResponse({ status: "error", message: "Proveedor no encontrado." });
       }
       
+      ensureExtraHeaders(sheet);
+      
       // Actualizamos datos
       sheet.getRange(rowIdx, 1).setValue(data.alias);
       sheet.getRange(rowIdx, 2).setValue(data.nombre || "");
@@ -190,6 +236,10 @@ function doPost(e) {
       sheet.getRange(rowIdx, 5).setValue(data.email || "");
       sheet.getRange(rowIdx, 6).setValue(Number(data.deudaTotal || 0));
       sheet.getRange(rowIdx, 11).setValue(data.obs || "");
+      sheet.getRange(rowIdx, 12).setValue(data.categoria || "");
+      sheet.getRange(rowIdx, 13).setValue(data.prioridad || "normal");
+      sheet.getRange(rowIdx, 14).setValue(data.fechaInicio || "");
+      sheet.getRange(rowIdx, 15).setValue(data.condiciones || "");
       
       // Si el alias cambió, actualizamos los movimientos asociados en la hoja Movimientos
       if (data.oldAlias !== data.alias) {
@@ -305,6 +355,31 @@ function doPost(e) {
       sheetMov.getRange(nextMovRow, 8).setValue(data.obs || ""); // H
       
       return jsonResponse({ status: "success", message: "Pago registrado y comprobantes guardados." });
+    }
+    
+    else if (action === "add_document") {
+      const folder = getOrCreateFolder(DRIVE_FOLDER_NAME);
+      const fileUrls = [];
+      
+      if (data.files && data.files.length > 0) {
+        const sheetComp = doc.getSheetByName("Comprobantes");
+        for (let f = 0; f < data.files.length; f++) {
+          const fileData = data.files[f];
+          const fileUrl = uploadFileToDrive(fileData.base64, fileData.name, fileData.mimeType, folder);
+          fileUrls.push(fileUrl);
+          
+          const nextCompRow = sheetComp.getLastRow() + 1;
+          sheetComp.getRange(nextCompRow, 1).setValue(data.fecha); // A
+          sheetComp.getRange(nextCompRow, 2).setValue(data.provAlias); // B
+          sheetComp.getRange(nextCompRow, 3).setValue(Number(data.monto || 0)); // C
+          sheetComp.getRange(nextCompRow, 4).setValue(fileData.mimeType.startsWith("image/") ? "Captura/Foto" : "Documento PDF"); // D
+          sheetComp.getRange(nextCompRow, 5).setValue(fileData.name); // E
+          sheetComp.getRange(nextCompRow, 6).setValue(fileUrl); // F
+          sheetComp.getRange(nextCompRow, 7).setValue(data.obs || ""); // G
+        }
+      }
+      
+      return jsonResponse({ status: "success", message: "Documento subido y registrado con éxito.", urls: fileUrls });
     }
     
     else if (action === "sync_queue") {
@@ -439,3 +514,40 @@ function ensureCorrectFormulas(doc) {
     // Evitar que un error en la corrección bloquee toda la lectura
   }
 }
+
+/**
+ * Asegura que existan los encabezados para las nuevas columnas L, M, N, O en la hoja de Proveedores
+ */
+function ensureExtraHeaders(sheet) {
+  try {
+    const headerRow = 5;
+    if (!sheet.getRange(headerRow, 12).getValue()) {
+      sheet.getRange(headerRow, 12).setValue("Categoría");
+    }
+    if (!sheet.getRange(headerRow, 13).getValue()) {
+      sheet.getRange(headerRow, 13).setValue("Prioridad");
+    }
+    if (!sheet.getRange(headerRow, 14).getValue()) {
+      sheet.getRange(headerRow, 14).setValue("Fecha inicio");
+    }
+    if (!sheet.getRange(headerRow, 15).getValue()) {
+      sheet.getRange(headerRow, 15).setValue("Condiciones");
+    }
+  } catch (e) {
+    // Evitar que falle el proceso principal si hay problemas con los encabezados
+  }
+}
+
+/**
+ * Decodifica el bloque META heredado de las observaciones
+ */
+function decodeMetaObs(obs) {
+  if (!obs) return { meta: {}, text: '' };
+  const match = obs.match(/^\[META:(.*?)\]\n?([\s\S]*)$/);
+  if (match) {
+    try { return { meta: JSON.parse(match[1]), text: (match[2] || '').trim() }; }
+    catch (e) { return { meta: {}, text: obs }; }
+  }
+  return { meta: {}, text: obs };
+}
+

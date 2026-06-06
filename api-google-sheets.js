@@ -42,6 +42,9 @@ function doGet(e) {
   try {
     const doc = SpreadsheetApp.getActiveSpreadsheet();
     
+    // Auto-repair formulas if needed to prevent locale syntax errors
+    ensureCorrectFormulas(doc);
+    
     // 1. LEER PROVEEDORES
     const sheetProv = doc.getSheetByName("Proveedores");
     const provRange = sheetProv.getRange(6, 1, sheetProv.getLastRow() - 5, 11);
@@ -142,6 +145,7 @@ function doPost(e) {
     if (action === "add_provider") {
       const sheet = doc.getSheetByName("Proveedores");
       const nextRow = sheet.getLastRow() + 1;
+      const sep = getFormulaSeparator();
       
       // Creamos la fila
       sheet.getRange(nextRow, 1).setValue(data.alias); // A
@@ -151,11 +155,11 @@ function doPost(e) {
       sheet.getRange(nextRow, 5).setValue(data.email || ""); // E
       sheet.getRange(nextRow, 6).setValue(Number(data.deudaTotal || 0)); // F
       
-      // Fórmulas automáticas de Excel
-      sheet.getRange(nextRow, 7).setFormula(`=IFERROR(SUMIF(Movimientos!$B$5:$B$10000, A${nextRow}, Movimientos!$E$5:$E$10000), 0)`); // G (Pagado)
-      sheet.getRange(nextRow, 8).setFormula(`=IFERROR(F${nextRow}-G${nextRow}, 0)`); // H (Pendiente)
-      sheet.getRange(nextRow, 9).setFormula(`=IFERROR(IF(F${nextRow}>0, G${nextRow}/F${nextRow}, 1), 1)`); // % Pagado
-      sheet.getRange(nextRow, 10).setFormula(`=IFERROR(IF(H${nextRow}<=0, "✅ Al día", IF(G${nextRow}>0, "🟡 Deuda parcial", "🔴 Con deuda")), "")`); // J (Estado)
+      // Fórmulas automáticas de Excel (usando el separador de la planilla)
+      sheet.getRange(nextRow, 7).setFormula(`=IFERROR(SUMIF(Movimientos!$B$5:$B$10000${sep} A${nextRow}${sep} Movimientos!$E$5:$E$10000)${sep} 0)`); // G (Pagado)
+      sheet.getRange(nextRow, 8).setFormula(`=IFERROR(F${nextRow}-G${nextRow}${sep} 0)`); // H (Pendiente)
+      sheet.getRange(nextRow, 9).setFormula(`=IFERROR(IF(F${nextRow}>0${sep} G${nextRow}/F${nextRow}${sep} 1)${sep} 1)`); // % Pagado
+      sheet.getRange(nextRow, 10).setFormula(`=IFERROR(IF(H${nextRow}<=0${sep} "✅ Al día"${sep} IF(G${nextRow}>0${sep} "🟡 Deuda parcial"${sep} "🔴 Con deuda"))${sep} "")`); // J (Estado)
       sheet.getRange(nextRow, 11).setValue(data.obs || ""); // K
       
       return jsonResponse({ status: "success", message: "Proveedor creado con éxito." });
@@ -290,12 +294,13 @@ function doPost(e) {
       }
       
       // Registrar en la hoja Movimientos
+      const sep = getFormulaSeparator();
       sheetMov.getRange(nextMovRow, 1).setValue(data.fecha); // A (Fecha)
       sheetMov.getRange(nextMovRow, 2).setValue(data.provAlias); // B (Alias)
       sheetMov.getRange(nextMovRow, 3).setValue(nombreProv); // C (Nombre)
       sheetMov.getRange(nextMovRow, 4).setValue(data.tipo === "total" ? "Pago total" : "Pago parcial"); // D (Tipo)
       sheetMov.getRange(nextMovRow, 5).setValue(Number(data.monto)); // E (Monto)
-      sheetMov.getRange(nextMovRow, 6).setFormula(`=IFERROR(VLOOKUP(B${nextMovRow}, Proveedores!$A$6:$H$1000, 8, FALSE), "")`); // F (Pendiente después del pago)
+      sheetMov.getRange(nextMovRow, 6).setFormula(`=IFERROR(VLOOKUP(B${nextMovRow}${sep} Proveedores!$A$6:$H$1000${sep} 8${sep} FALSE)${sep} "")`); // F (Pendiente después del pago)
       sheetMov.getRange(nextMovRow, 7).setValue(comprobanteLinks.length > 0 ? comprobanteLinks.join(" | ") : "Sin comprobante"); // G (Link Drive)
       sheetMov.getRange(nextMovRow, 8).setValue(data.obs || ""); // H
       
@@ -354,4 +359,83 @@ function uploadFileToDrive(base64Data, filename, mimeType, folder) {
   const file = folder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return file.getUrl();
+}
+
+/**
+ * Detecta el separador de argumentos de fórmulas de acuerdo a la configuración regional de la planilla.
+ * Las planillas en regiones que usan coma como separador decimal (como Argentina o España) usan punto y coma (;).
+ */
+function getFormulaSeparator() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const locale = ss.getSpreadsheetLocale();
+    const lang = locale.split('_')[0];
+    const semicolonLanguages = ['de', 'fr', 'it', 'es', 'pt', 'tr', 'ru', 'pl', 'nl', 'sv', 'no', 'da', 'fi'];
+    if (semicolonLanguages.indexOf(lang) !== -1) {
+      return ';';
+    }
+  } catch (e) {
+    // fallback
+  }
+  return ',';
+}
+
+/**
+ * Corrige y regenera las fórmulas de la hoja en caso de que contengan errores o separadores incorrectos.
+ * Esto se ejecuta automáticamente al iniciar doGet para sanear la planilla.
+ */
+function ensureCorrectFormulas(doc) {
+  try {
+    const sheetProv = doc.getSheetByName("Proveedores");
+    const lastRowProv = sheetProv.getLastRow();
+    if (lastRowProv < 6) return;
+    
+    const sep = getFormulaSeparator();
+    
+    // Comprobamos si la primera fila tiene error o fórmulas rotas
+    const rangeG = sheetProv.getRange(6, 7, lastRowProv - 5, 1);
+    const valuesG = rangeG.getValues();
+    
+    let needsFix = false;
+    for (let i = 0; i < valuesG.length; i++) {
+      const valStr = String(valuesG[i][0]);
+      if (valStr.indexOf("#ERROR") !== -1 || valStr === "NaN") {
+        needsFix = true;
+        break;
+      }
+    }
+    
+    if (needsFix) {
+      // Regeneramos las fórmulas con el separador regional correcto
+      for (let r = 6; r <= lastRowProv; r++) {
+        sheetProv.getRange(r, 7).setFormula(`=IFERROR(SUMIF(Movimientos!$B$5:$B$10000${sep} A${r}${sep} Movimientos!$E$5:$E$10000)${sep} 0)`);
+        sheetProv.getRange(r, 8).setFormula(`=IFERROR(F${r}-G${r}${sep} 0)`);
+        sheetProv.getRange(r, 9).setFormula(`=IFERROR(IF(F${r}>0${sep} G${r}/F${r}${sep} 1)${sep} 1)`);
+        sheetProv.getRange(r, 10).setFormula(`=IFERROR(IF(H${r}<=0${sep} "✅ Al día"${sep} IF(G${r}>0${sep} "🟡 Deuda parcial"${sep} "🔴 Con deuda"))${sep} "")`);
+      }
+    }
+    
+    // Corregimos la hoja Movimientos
+    const sheetMov = doc.getSheetByName("Movimientos");
+    const lastRowMov = sheetMov.getLastRow();
+    if (lastRowMov >= 5) {
+      const rangeF = sheetMov.getRange(5, 6, lastRowMov - 4, 1);
+      const valuesF = rangeF.getValues();
+      let needsMovFix = false;
+      for (let i = 0; i < valuesF.length; i++) {
+        const valStr = String(valuesF[i][0]);
+        if (valStr.indexOf("#ERROR") !== -1 || valStr === "NaN") {
+          needsMovFix = true;
+          break;
+        }
+      }
+      if (needsMovFix) {
+        for (let r = 5; r <= lastRowMov; r++) {
+          sheetMov.getRange(r, 6).setFormula(`=IFERROR(VLOOKUP(B${r}${sep} Proveedores!$A$6:$H$1000${sep} 8${sep} FALSE)${sep} "")`);
+        }
+      }
+    }
+  } catch (e) {
+    // Evitar que un error en la corrección bloquee toda la lectura
+  }
 }

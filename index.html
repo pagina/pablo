@@ -1993,8 +1993,11 @@
             const pagadoReal = pagosSync
               .filter(mv => mv.provId === p.alias)
               .reduce((sum, mv) => sum + (Number(mv.monto) || 0), 0);
-            // Usar el mayor entre lo que calcula Sheets y los movimientos
-            const pagadoFinal = Math.max(Number(p.pagado) || 0, pagadoReal);
+            // Buscar pagado local actual para no pisarlo si Sheets aún no procesó los movimientos
+            const provLocal = state.proveedores.find(x => x.alias === p.alias);
+            const pagadoLocal = provLocal ? (provLocal.pagado || 0) : 0;
+            // Usar el mayor entre Sheets, movimientos y valor local
+            const pagadoFinal = Math.max(Number(p.pagado) || 0, pagadoReal, pagadoLocal);
             return {
               id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
               telefono: p.telefono !== undefined && p.telefono !== null ? String(p.telefono) : '', email: p.email || '',

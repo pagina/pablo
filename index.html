@@ -534,12 +534,11 @@
     <div class="login-box">
       <div class="login-logo">Gestor<span>PRO</span></div>
       <div class="login-sub">Sistema de deudas a proveedores</div>
-      <label>Usuario</label>
-      <input type="text" id="loginUser" placeholder="Tu usuario" autocomplete="username">
-      <label>Contraseña</label>
-      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
-      <button class="btn-login" onclick="doLogin()">Ingresar</button>
-      <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
+      <button class="btn-login" id="btnGoogleLogin" onclick="doGoogleLogin()" style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:16px">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.6 32.5 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.2 2.7l5.7-5.7C33.7 7.1 29.1 5 24 5 12.9 5 4 13.9 4 25s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 19 13 24 13c2.8 0 5.3 1 7.2 2.7l5.7-5.7C33.7 7.1 29.1 5 24 5 16.3 5 9.7 9.1 6.3 14.7z"/><path fill="#4CAF50" d="M24 45c5 0 9.5-1.9 12.9-5l-6-4.9C29.2 36.6 26.7 37.5 24 37.5c-5.2 0-9.5-3.4-11.2-8.1l-6.5 5C9.6 40.8 16.3 45 24 45z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.9 2.4-2.5 4.5-4.6 5.9l6 4.9C42.4 34.9 44 30.2 44 25c0-1.3-.1-2.6-.4-3.9z"/></svg>
+        Ingresar con Google
+      </button>
+      <div class="login-error" id="loginError" style="display:none">Error al iniciar sesión. Intentá de nuevo.</div>
     </div>
   </div>
 
@@ -934,15 +933,69 @@
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
+  <!-- ==================== FIREBASE ==================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, writeBatch }
+      from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB8pi51bWGOxXRVRz58bALBVJtda7-F6UU",
+      authDomain: "gestorpro-4019c.firebaseapp.com",
+      projectId: "gestorpro-4019c",
+      storageBucket: "gestorpro-4019c.firebasestorage.app",
+      messagingSenderId: "781436148283",
+      appId: "1:781436148283:web:fe054b7486be20f5c05a1e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    // Expose to global scope for non-module functions
+    window._fbAuth = auth;
+    window._fbDb = db;
+    window._fbProvider = provider;
+    window._fbSignOut = signOut;
+    window._fbOnAuth = onAuthStateChanged;
+    window._fbDoc = doc;
+    window._fbGetDoc = getDoc;
+    window._fbSetDoc = setDoc;
+    window._fbOnSnapshot = onSnapshot;
+    window._fbCollection = collection;
+    window._fbWriteBatch = writeBatch;
+    window._fbSignInWithPopup = signInWithPopup;
+
+    // Listen for auth state
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        window.currentUser = {
+          username: user.email,
+          label: user.displayName || user.email,
+          role: 'owner',  // All Google users are owners; add role logic later if needed
+          uid: user.uid,
+          photoURL: user.photoURL
+        };
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        document.getElementById('userBadge').textContent = window.currentUser.label;
+        await window.loadDataFromFirebase();
+        window.renderAll();
+        if (window.sheetUrl && navigator.onLine) window.syncWithSheet();
+      } else {
+        window.currentUser = null;
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('app').style.display = 'none';
+      }
+    });
+  </script>
+
   <!-- ==================== JAVASCRIPT ==================== -->
   <script>
     // ===================== DATA & CONFIG =====================
-    const USERS = {
-      'pablo castillo': { pass: '12345', role: 'owner', label: 'Pablo Castillo' },
-      'dueño': { pass: 'admin123', role: 'owner', label: 'Dueño' },
-      'empleado': { pass: 'emp456', role: 'employee', label: 'Empleado' }
-    };
-
     const CATEGORIAS = ['Telas', 'Insumos', 'Servicios', 'Transporte', 'Mercería', 'Varios', 'Otro'];
 
     let currentUser = null;
@@ -960,6 +1013,101 @@
     let syncQueue = [];
     let isSyncing = false;
     let lastSyncTime = localStorage.getItem('gp_last_sync') || 'Nunca';
+
+    // ===================== FIREBASE AUTH =====================
+    async function doGoogleLogin() {
+      const err = document.getElementById('loginError');
+      err.style.display = 'none';
+      try {
+        await window._fbSignInWithPopup(window._fbAuth, window._fbProvider);
+        // onAuthStateChanged handles the rest
+      } catch (e) {
+        console.error('Login error:', e);
+        err.style.display = 'block';
+      }
+    }
+
+    async function doLogout() {
+      await window._fbSignOut(window._fbAuth);
+    }
+
+    // ===================== FIREBASE STORAGE =====================
+    const FB_DOC = 'gestorpro/data';
+
+    async function saveDataToFirebase() {
+      try {
+        const docRef = window._fbDoc(window._fbDb, 'gestorpro', 'data');
+        await window._fbSetDoc(docRef, {
+          proveedores: state.proveedores,
+          pagos: state.pagos,
+          comprobantes: state.comprobantes,
+          syncQueue,
+          lastUpdated: Date.now()
+        });
+      } catch (err) {
+        console.error('Firebase save error:', err);
+        // Fallback to localStorage
+        saveDataLocal();
+      }
+    }
+
+    function saveDataLocal() {
+      localStorage.setItem('gp_proveedores', JSON.stringify(state.proveedores));
+      localStorage.setItem('gp_pagos', JSON.stringify(state.pagos));
+      localStorage.setItem('gp_comprobantes', JSON.stringify(state.comprobantes));
+      localStorage.setItem('gp_sync_queue', JSON.stringify(syncQueue));
+    }
+
+    function saveData() {
+      saveDataLocal(); // Always save locally for offline
+      saveDataToFirebase(); // Also push to Firebase
+    }
+
+    async function loadDataFromFirebase() {
+      try {
+        const docRef = window._fbDoc(window._fbDb, 'gestorpro', 'data');
+        const snap = await window._fbGetDoc(docRef);
+        if (snap.exists()) {
+          const d = snap.data();
+          state.proveedores = d.proveedores || [];
+          state.pagos = d.pagos || [];
+          state.comprobantes = d.comprobantes || [];
+          syncQueue = d.syncQueue || [];
+          saveDataLocal();
+        } else {
+          // First time — load local or sample
+          loadDataLocal();
+        }
+        // Set up real-time listener for live updates from other users
+        window._fbOnSnapshot(docRef, (snap) => {
+          if (snap.exists() && snap.metadata.hasPendingWrites === false) {
+            const d = snap.data();
+            state.proveedores = d.proveedores || [];
+            state.pagos = d.pagos || [];
+            state.comprobantes = d.comprobantes || [];
+            // Don't override syncQueue from server (it's local-only)
+            saveDataLocal();
+            renderAll();
+          }
+        });
+      } catch (err) {
+        console.error('Firebase load error, using local:', err);
+        loadDataLocal();
+      }
+      updateSyncBadge();
+      updateStatusDisplay();
+    }
+
+    function loadDataLocal() {
+      state.proveedores = JSON.parse(localStorage.getItem('gp_proveedores') || '[]');
+      state.pagos = JSON.parse(localStorage.getItem('gp_pagos') || '[]');
+      state.comprobantes = JSON.parse(localStorage.getItem('gp_comprobantes') || '[]');
+      syncQueue = JSON.parse(localStorage.getItem('gp_sync_queue') || '[]');
+      if (state.proveedores.length === 0) loadSampleData();
+    }
+
+    // Keep loadData as alias for backward compat
+    function loadData() { loadDataLocal(); updateSyncBadge(); updateStatusDisplay(); }
 
     // ===================== META ENCODING =====================
     function encodeMetaObs(meta, freeText) {
@@ -1070,16 +1218,6 @@
       localStorage.setItem('gp_sync_queue', JSON.stringify(syncQueue));
     }
 
-    function loadData() {
-      state.proveedores = JSON.parse(localStorage.getItem('gp_proveedores') || '[]');
-      state.pagos = JSON.parse(localStorage.getItem('gp_pagos') || '[]');
-      state.comprobantes = JSON.parse(localStorage.getItem('gp_comprobantes') || '[]');
-      syncQueue = JSON.parse(localStorage.getItem('gp_sync_queue') || '[]');
-      if (state.proveedores.length === 0) loadSampleData();
-      updateSyncBadge();
-      updateStatusDisplay();
-    }
-
     function loadSampleData() {
       state.proveedores = [
         { id:'Juan Telas', alias:'Juan Telas', nombre:'Juan Carlos Pérez', cbu:'0000003100012345678901', telefono:'5491155667788', email:'juan@telas.com', deudaTotal:85000, pagado:30000, categoria:'Telas', prioridad:'urgente', fechaInicio:'2025-03-15', condiciones:'30 días', obs:'Paga los viernes' },
@@ -1138,32 +1276,6 @@
       t.classList.add('show');
       setTimeout(() => t.classList.remove('show'), 2800);
     }
-
-    // ===================== AUTH =====================
-    function doLogin() {
-      const u = document.getElementById('loginUser').value.trim().toLowerCase();
-      const p = document.getElementById('loginPass').value;
-      const err = document.getElementById('loginError');
-      if (USERS[u] && USERS[u].pass === p) {
-        currentUser = { username: u, ...USERS[u] };
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('app').style.display = 'flex';
-        document.getElementById('userBadge').textContent = currentUser.label;
-        if (currentUser.role === 'employee') document.getElementById('btnNuevoProv').style.display = 'none';
-        loadData(); renderAll(); err.style.display = 'none';
-        if (sheetUrl && navigator.onLine) syncWithSheet();
-      } else { err.style.display = 'block'; }
-    }
-    function doLogout() {
-      currentUser = null;
-      document.getElementById('loginScreen').style.display = 'flex';
-      document.getElementById('app').style.display = 'none';
-      document.getElementById('loginUser').value = '';
-      document.getElementById('loginPass').value = '';
-    }
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') doLogin();
-    });
 
     // ===================== TABS =====================
     function switchTab(btn, section) {
@@ -2088,16 +2200,13 @@
       });
     }
 
-    // Auto-login Pablo Castillo
-    function autoLogin() {
-      currentUser = { username: 'pablo castillo', ...USERS['pablo castillo'] };
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('app').style.display = 'flex';
-      document.getElementById('userBadge').textContent = currentUser.label;
-      loadData(); renderAll();
-      if (sheetUrl && navigator.onLine) syncWithSheet();
-    }
-    autoLogin();
+    // Expose to window for Firebase module access
+    window.loadDataFromFirebase = loadDataFromFirebase;
+    window.renderAll = renderAll;
+    window.syncWithSheet = syncWithSheet;
+    window.sheetUrl = sheetUrl;
+    window.doGoogleLogin = doGoogleLogin;
+    window.doLogout = doLogout;
   </script>
 </body>
 

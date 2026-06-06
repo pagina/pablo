@@ -1,11 +1,11 @@
 {
   "name": "GestorPRO – Deudas a Proveedores",
   "short_name": "GestorPRO",
-  "description": "Sistema de gestión de deudas con proveedores con sincronización con Google Sheets",
-  "start_url": "./gestión-proveedores.html",
+  "description": "Sistema profesional de gestión de deudas con proveedores con sincronización Google Sheets",
+  "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0d0f14",
-  "theme_color": "#0f1117",
+  "background_color": "#0a0b10",
+  "theme_color": "#0a0b10",
   "orientation": "portrait-primary",
   "icons": [
     {

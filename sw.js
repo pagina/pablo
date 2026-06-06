@@ -1,7 +1,7 @@
-const CACHE_NAME = 'gestorpro-v1';
+const CACHE_NAME = 'gestorpro-v2';
 const ASSETS = [
   './',
-  './gestión-proveedores.html',
+  './index.html',
   './manifest.json',
   './app_icon.png'
 ];
@@ -11,7 +11,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('[Service Worker] Precaching app shell...');
+        console.log('[Service Worker] Precaching app shell v2...');
         return cache.addAll(ASSETS);
       })
       .then(() => self.skipWaiting())
@@ -43,6 +43,23 @@ self.addEventListener('fetch', event => {
     return; // Bypass de caché para la API
   }
 
+  // Excluir Google Fonts de la estrategia stale-while-revalidate (dejar que el navegador las cachee normalmente)
+  if (url.includes('fonts.googleapis.com') || url.includes('fonts.gstatic.com')) {
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        return fetch(event.request).then(response => {
+          if (response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(cachedResponse => {
       if (cachedResponse) {
@@ -53,10 +70,10 @@ self.addEventListener('fetch', event => {
             caches.open(CACHE_NAME).then(cache => cache.put(event.request, networkResponse));
           }
         }).catch(err => console.log('[Service Worker] Fetch failed, using cached version.'));
-        
+
         return cachedResponse;
       }
-      
+
       // Si no está en la caché, buscar en la red
       return fetch(event.request);
     })

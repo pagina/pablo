@@ -1008,8 +1008,8 @@
 
     const state = { proveedores: [], pagos: [], comprobantes: [] };
 
-    let sheetUrl = localStorage.getItem('gp_sheet_url') || '';
-    let sheetToken = localStorage.getItem('gp_sheet_token') || '';
+    let sheetUrl = localStorage.getItem('gp_sheet_url') || 'https://script.google.com/macros/s/AKfycbz51zNJ-99sckD8vrhZ59cetqQ5G4KI3NqyNSubS2DblIOy9tX-zZ0sFsyo5idzw7A/exec';
+    let sheetToken = localStorage.getItem('gp_sheet_token') || 'gestorpro123';
     let syncQueue = [];
     let isSyncing = false;
     let lastSyncTime = localStorage.getItem('gp_last_sync') || 'Nunca';

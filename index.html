@@ -187,6 +187,8 @@
     .dash-pago-prov { font-size: 13px; font-weight: 700; }
     .dash-pago-date { font-size: 11px; color: var(--muted); }
     .dash-pago-monto { font-size: 15px; font-weight: 700; font-family: 'Space Mono', monospace; color: var(--green); }
+    .dash-pago-del { background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 4px 6px; border-radius: var(--radius-xs); transition: color var(--transition), background var(--transition); margin-left: 8px; }
+    .dash-pago-del:hover { color: var(--red); background: var(--red-dim); }
 
     .dash-urgent-item {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -1230,11 +1232,26 @@
                 <div class="dash-pago-prov">${esc(p.provId)}</div>
                 <div class="dash-pago-date">${fmtDate(p.fecha)}${p.metodo ? ' · ' + esc(p.metodo) : ''}</div>
               </div>
-              <div class="dash-pago-monto">${fmt(p.monto)}</div>
+              <div style="display:flex;align-items:center">
+                <div class="dash-pago-monto">${fmt(p.monto)}</div>
+                <button class="dash-pago-del" onclick="event.stopPropagation();deletePago('${p.id}')" title="Eliminar pago">🗑</button>
+              </div>
             </div>`).join('');
       } else {
         recentEl.innerHTML = `<div class="dash-section-title">📋 Últimos pagos</div><div class="empty-state" style="padding:20px"><div class="empty-state-text">Sin pagos registrados</div></div>`;
       }
+    }
+
+    function deletePago(pagoId) {
+      if (!confirm('¿Eliminar este pago? El saldo del proveedor se va a recalcular.')) return;
+      const pago = state.pagos.find(p => p.id === pagoId);
+      if (!pago) return;
+      const prov = state.proveedores.find(p => p.alias === pago.provId);
+      if (prov) prov.pagado = Math.max(0, (prov.pagado || 0) - (pago.monto || 0));
+      state.pagos = state.pagos.filter(p => p.id !== pagoId);
+      queueAction('delete_payment', { pagoId, provAlias: pago.provId, monto: pago.monto });
+      saveData(); renderAll();
+      showToast('Pago eliminado', 'error');
     }
 
     function goToProvDetail(alias) {
@@ -1993,11 +2010,8 @@
             const pagadoReal = pagosSync
               .filter(mv => mv.provId === p.alias)
               .reduce((sum, mv) => sum + (Number(mv.monto) || 0), 0);
-            // Buscar pagado local actual para no pisarlo si Sheets aún no procesó los movimientos
-            const provLocal = state.proveedores.find(x => x.alias === p.alias);
-            const pagadoLocal = provLocal ? (provLocal.pagado || 0) : 0;
-            // Usar el mayor entre Sheets, movimientos y valor local
-            const pagadoFinal = Math.max(Number(p.pagado) || 0, pagadoReal, pagadoLocal);
+            // Usar el mayor entre lo que calcula Sheets y los movimientos
+            const pagadoFinal = Math.max(Number(p.pagado) || 0, pagadoReal);
             return {
               id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
               telefono: p.telefono !== undefined && p.telefono !== null ? String(p.telefono) : '', email: p.email || '',

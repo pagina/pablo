@@ -1791,23 +1791,9 @@
       if (editingProvId) {
         const p = state.proveedores.find(x => x.alias === editingProvId);
         const oldAlias = p.alias;
-        const pagadoViejo = p.pagado || 0;
-        const pagadoNuevo = Math.min(pagado, deudaTotal);
         Object.assign(p, { alias, nombre: provData.nombre, cbu: provData.cbu, telefono, email,
-          deudaTotal, pagado: pagadoNuevo, categoria, prioridad, fechaInicio, condiciones, obs: obsText });
+          deudaTotal, pagado: p.pagado, categoria, prioridad, fechaInicio, condiciones, obs: obsText });
         queueAction('edit_provider', { oldAlias, ...provData });
-        // Si el pagado aumentó, registrar la diferencia como movimiento
-        const diff = pagadoNuevo - pagadoViejo;
-        if (diff > 0) {
-          const pagoId = genId();
-          const pagoFecha = fechaInicio || todayISO();
-          state.pagos.push({ id: pagoId, provId: alias, fecha: pagoFecha,
-            tipo: pagadoNuevo >= deudaTotal ? 'total' : 'parcial', monto: diff,
-            metodo: 'Efectivo', banco: '', referencia: '', obs: 'Pago inicial' });
-          queueAction('add_payment', { provAlias: alias, fecha: pagoFecha,
-            tipo: pagadoNuevo >= deudaTotal ? 'total' : 'parcial', monto: diff,
-            obs: 'Efectivo | Pago inicial', pendingFileIds: [] });
-        }
       } else {
         if (state.proveedores.some(x => x.alias.toLowerCase() === alias.toLowerCase())) {
           showToast('Ya existe un proveedor con ese alias', 'error'); return;
@@ -2227,13 +2213,18 @@
             };
           });
 
-          state.proveedores = resJson.proveedores.map(p => ({
-            id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
-            telefono: p.telefono !== undefined && p.telefono !== null ? String(p.telefono) : '', email: p.email || '',
-            deudaTotal: Number(p.deudaTotal) || 0, pagado: Number(p.pagado) || 0,
-            categoria: p.categoria || '', prioridad: p.prioridad || 'normal',
-            fechaInicio: p.fechaInicio || '', condiciones: p.condiciones || '', obs: p.obs || ''
-          }));
+          state.proveedores = resJson.proveedores.map(p => {
+            const local = state.proveedores.find(x => x.alias === p.alias);
+            const pagadoSheets = Number(p.pagado) || 0;
+            const pagadoLocal = local ? (local.pagado || 0) : 0;
+            return {
+              id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
+              telefono: p.telefono !== undefined && p.telefono !== null ? String(p.telefono) : '', email: p.email || '',
+              deudaTotal: Number(p.deudaTotal) || 0, pagado: Math.max(pagadoSheets, pagadoLocal),
+              categoria: p.categoria || '', prioridad: p.prioridad || 'normal',
+              fechaInicio: p.fechaInicio || '', condiciones: p.condiciones || '', obs: p.obs || ''
+            };
+          });
 
           state.pagos = pagosSync.filter(p => {
             const key = `${p.provId}|${p.fecha}|${p.monto}`;

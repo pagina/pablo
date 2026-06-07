@@ -1813,19 +1813,22 @@
           showToast('Ya existe un proveedor con ese alias', 'error'); return;
         }
         const pagoMonto = Math.min(pagado, deudaTotal);
+        const pagoFecha = fechaInicio || todayISO();
         state.proveedores.push({ id: alias, alias, nombre: provData.nombre, cbu: provData.cbu,
           telefono, email, deudaTotal, pagado: pagoMonto, categoria, prioridad, fechaInicio, condiciones, obs: obsText });
-        queueAction('add_provider', provData);
 
         if (pagoMonto > 0) {
+          // ✅ Acción atómica: crea proveedor Y pago inicial en una sola llamada a Sheets
           const pagoId = genId();
-          const pagoFecha = fechaInicio || todayISO();
           state.pagos.push({ id: pagoId, provId: alias, fecha: pagoFecha,
             tipo: pagoMonto >= deudaTotal ? 'total' : 'parcial', monto: pagoMonto,
             metodo: 'Efectivo', banco: '', referencia: '', obs: 'Pago inicial' });
-          queueAction('add_payment', { provAlias: alias, fecha: pagoFecha,
-            tipo: pagoMonto >= deudaTotal ? 'total' : 'parcial', monto: pagoMonto,
-            obs: 'Efectivo | Pago inicial', pendingFileIds: [] });
+          queueAction('add_provider_with_payment', {
+            ...provData, pagoMonto, pagoFecha
+          });
+        } else {
+          // Sin pago inicial: solo crear proveedor
+          queueAction('add_provider', provData);
         }
       }
 

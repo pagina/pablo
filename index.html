@@ -687,7 +687,7 @@
           </div>
           <div class="config-group">
             <label>Clave Secreta de Acceso (Token)</label>
-            <input type="password" id="cfgSheetToken" placeholder="Contraseña configurada en el Apps Script">
+            <input type="password" id="cfgSheetToken" placeholder="Contraseña configurada en el Apps Script" >
           </div>
           <div style="display:flex;gap:10px;margin-top:20px">
             <button class="btn" onclick="saveConfig()" style="flex:1;justify-content:center">💾 Guardar Config</button>
@@ -969,16 +969,18 @@
         uid: user.id,
         photoURL: user.user_metadata?.avatar_url
       };
-      // Mostrar app inmediatamente con datos locales (sin esperar Supabase)
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('app').style.display = 'flex';
       document.getElementById('userBadge').textContent = window.currentUser.label;
+      // Mostrar datos locales inmediatamente
       loadDataLocal();
       window.renderAll();
-      // Cargar Supabase en background sin bloquear la UI
+      updateSyncBadge();
+      // Cargar Supabase en background (config + datos)
       window.loadDataFromSupabase().then(() => {
         window.renderAll();
-        if (window.sheetUrl && navigator.onLine) window.syncWithSheet();
+        // Solo sincronizar con Sheets si hay URL cargada de Supabase
+        if (sheetUrl && navigator.onLine) window.syncWithSheet();
       });
     }
 
@@ -1088,7 +1090,7 @@
           _supa.from('config').select('*')
         ]);
 
-        // Cargar config primero para que sheetUrl esté disponible
+        // Config primero — sheetUrl disponible antes de renderizar
         if (cfgRes.data && cfgRes.data.length > 0) {
           const urlRow = cfgRes.data.find(r => r.key === 'sheet_url');
           const tokenRow = cfgRes.data.find(r => r.key === 'sheet_token');
@@ -1126,7 +1128,7 @@
 
         saveDataLocal();
 
-        // Suscribirse al real-time solo una vez
+        // Real-time solo una vez para evitar duplicados y memory leaks
         if (!_realtimeSubscribed) {
           _realtimeSubscribed = true;
           _supa.channel('db-changes')
@@ -2114,10 +2116,9 @@
       } catch(e) { console.error('Config load error:', e); }
     }
 
-    async function loadConfigUI() {
-      await loadConfigFromSupabase();
-      document.getElementById('cfgSheetUrl').value = sheetUrl;
-      document.getElementById('cfgSheetToken').value = sheetToken;
+    function loadConfigUI() {
+      document.getElementById('cfgSheetUrl').value = sheetUrl || '';
+      document.getElementById('cfgSheetToken').value = sheetToken || '';
       updateStatusDisplay();
     }
 
@@ -2264,7 +2265,7 @@
       const badge = document.getElementById('syncBadge');
       if (!badge) return;
       if (!sheetUrl) {
-        badge.innerHTML = `<span class="sync-dot"></span><span>Sin Conectar</span>`;
+        badge.innerHTML = `<span class="sync-dot"></span><span>Sin Sheets</span>`;
         badge.querySelector('.sync-dot').className = 'sync-dot'; return;
       }
       const qCount = syncQueue.length;

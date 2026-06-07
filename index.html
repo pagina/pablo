@@ -2213,25 +2213,27 @@
             };
           });
 
+          // Guardar pagos locales ANTES de pisarlos (pueden tener movimientos que Sheets aún no procesó)
+          const pagosAntesDeSync = [...(state.pagos || [])];
+
           // Filtrar pagos eliminados
           const pagosFinales = pagosSync.filter(p => {
             const key = `${p.provId}|${p.fecha}|${p.monto}`;
             return !deletedPaymentIds.has(key);
           });
 
-          // Calcular pagado sumando los movimientos (igual que SUMIF de Sheets)
-          // así no dependemos del valor de Sheets que puede estar desactualizado
+          // Calcular pagado: suma de movimientos de Sheets + cualquier pago local que Sheets no tenga aún
           state.proveedores = resJson.proveedores.map(p => {
-            const pagadoDeMovimientos = pagosFinales
+            const pagadoDeSheets = pagosFinales
               .filter(pago => pago.provId === p.alias)
               .reduce((sum, pago) => sum + (pago.monto || 0), 0);
-            const pagadoLocalActual = (state.pagos || [])
+            const pagadoDeLocal = pagosAntesDeSync
               .filter(pago => pago.provId === p.alias)
               .reduce((sum, pago) => sum + (pago.monto || 0), 0);
             return {
               id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
               telefono: p.telefono !== undefined && p.telefono !== null ? String(p.telefono) : '', email: p.email || '',
-              deudaTotal: Number(p.deudaTotal) || 0, pagado: Math.max(pagadoDeMovimientos, pagadoLocalActual),
+              deudaTotal: Number(p.deudaTotal) || 0, pagado: Math.max(pagadoDeSheets, pagadoDeLocal),
               categoria: p.categoria || '', prioridad: p.prioridad || 'normal',
               fechaInicio: p.fechaInicio || '', condiciones: p.condiciones || '', obs: p.obs || ''
             };

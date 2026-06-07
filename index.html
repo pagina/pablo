@@ -1792,7 +1792,7 @@
         const p = state.proveedores.find(x => x.alias === editingProvId);
         const oldAlias = p.alias;
         Object.assign(p, { alias, nombre: provData.nombre, cbu: provData.cbu, telefono, email,
-          deudaTotal, pagado: p.pagado, categoria, prioridad, fechaInicio, condiciones, obs: obsText });
+          deudaTotal, pagado, categoria, prioridad, fechaInicio, condiciones, obs: obsText });
         queueAction('edit_provider', { oldAlias, ...provData });
       } else {
         if (state.proveedores.some(x => x.alias.toLowerCase() === alias.toLowerCase())) {

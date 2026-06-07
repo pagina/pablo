@@ -1021,6 +1021,7 @@
     let sheetUrl = 'https://script.google.com/macros/s/AKfycbz51zNJ-99sckD8vrhZ59cetqQ5G4KI3NqyNSubS2DblIOy9tX-zZ0sFsyo5idzw7A/exec';
     let sheetToken = 'gestorpro123';
     let syncQueue = [];
+    let deletedPaymentIds = new Set();
     let isSyncing = false;
     let lastSyncTime = localStorage.getItem('gp_last_sync') || 'Nunca';
 
@@ -1055,6 +1056,7 @@
       localStorage.setItem('gp_pagos', JSON.stringify(state.pagos));
       localStorage.setItem('gp_comprobantes', JSON.stringify(state.comprobantes));
       localStorage.setItem('gp_sync_queue', JSON.stringify(syncQueue));
+      localStorage.setItem('gp_deleted_payment_ids', JSON.stringify([...deletedPaymentIds]));
     }
 
     async function saveData() {
@@ -1157,6 +1159,7 @@
         state.pagos = JSON.parse(localStorage.getItem('gp_pagos') || '[]');
         state.comprobantes = JSON.parse(localStorage.getItem('gp_comprobantes') || '[]');
         syncQueue = JSON.parse(localStorage.getItem('gp_sync_queue') || '[]');
+        deletedPaymentIds = new Set(JSON.parse(localStorage.getItem('gp_deleted_payment_ids') || '[]'));
       }
       updateSyncBadge();
       updateStatusDisplay();
@@ -1167,6 +1170,7 @@
       state.pagos = JSON.parse(localStorage.getItem('gp_pagos') || '[]');
       state.comprobantes = JSON.parse(localStorage.getItem('gp_comprobantes') || '[]');
       syncQueue = JSON.parse(localStorage.getItem('gp_sync_queue') || '[]');
+      deletedPaymentIds = new Set(JSON.parse(localStorage.getItem('gp_deleted_payment_ids') || '[]'));
     }
 
     function loadData() { loadDataLocal(); updateSyncBadge(); updateStatusDisplay(); }
@@ -1419,6 +1423,9 @@
       const prov = state.proveedores.find(p => p.alias === pago.provId);
       if (prov) prov.pagado = Math.max(0, (prov.pagado || 0) - (pago.monto || 0));
       state.pagos = state.pagos.filter(p => p.id !== pagoId);
+      // Registrar clave de eliminación para evitar que la sync de Sheets lo restaure
+      const deletionKey = `${pago.provId}|${pago.fecha}|${pago.monto}`;
+      deletedPaymentIds.add(deletionKey);
       // Borrar en Supabase inmediatamente (no esperar la sync de Sheets)
       try { await _supa.from('pagos').delete().eq('id', pagoId); } catch(e) { console.error('Supabase delete pago:', e); }
       // Actualizar pagado del proveedor en Supabase
@@ -1438,6 +1445,9 @@
       const prov = state.proveedores.find(p => p.alias === pago.provId);
       if (prov) prov.pagado = Math.max(0, (prov.pagado || 0) - (pago.monto || 0));
       state.pagos = state.pagos.filter(p => p.id !== pagoId);
+      // Registrar clave de eliminación para evitar que la sync de Sheets lo restaure
+      const deletionKey = `${pago.provId}|${pago.fecha}|${pago.monto}`;
+      deletedPaymentIds.add(deletionKey);
       // Borrar en Supabase inmediatamente
       try { await _supa.from('pagos').delete().eq('id', pagoId); } catch(e) { console.error('Supabase delete pago:', e); }
       if (prov) {
@@ -2211,7 +2221,10 @@
             fechaInicio: p.fechaInicio || '', condiciones: p.condiciones || '', obs: p.obs || ''
           }));
 
-          state.pagos = pagosSync;
+          state.pagos = pagosSync.filter(p => {
+            const key = `${p.provId}|${p.fecha}|${p.monto}`;
+            return !deletedPaymentIds.has(key);
+          });
 
           state.comprobantes = resJson.comprobantes.map(c => ({
             id: genId(), pagoId: '', provAlias: c.provAlias, name: c.name,

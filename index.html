@@ -2213,23 +2213,31 @@
             };
           });
 
+          // Filtrar pagos eliminados
+          const pagosFinales = pagosSync.filter(p => {
+            const key = `${p.provId}|${p.fecha}|${p.monto}`;
+            return !deletedPaymentIds.has(key);
+          });
+
+          // Calcular pagado sumando los movimientos (igual que SUMIF de Sheets)
+          // así no dependemos del valor de Sheets que puede estar desactualizado
           state.proveedores = resJson.proveedores.map(p => {
-            const local = state.proveedores.find(x => x.alias === p.alias);
-            const pagadoSheets = Number(p.pagado) || 0;
-            const pagadoLocal = local ? (local.pagado || 0) : 0;
+            const pagadoDeMovimientos = pagosFinales
+              .filter(pago => pago.provId === p.alias)
+              .reduce((sum, pago) => sum + (pago.monto || 0), 0);
+            const pagadoLocalActual = (state.pagos || [])
+              .filter(pago => pago.provId === p.alias)
+              .reduce((sum, pago) => sum + (pago.monto || 0), 0);
             return {
               id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
               telefono: p.telefono !== undefined && p.telefono !== null ? String(p.telefono) : '', email: p.email || '',
-              deudaTotal: Number(p.deudaTotal) || 0, pagado: Math.max(pagadoSheets, pagadoLocal),
+              deudaTotal: Number(p.deudaTotal) || 0, pagado: Math.max(pagadoDeMovimientos, pagadoLocalActual),
               categoria: p.categoria || '', prioridad: p.prioridad || 'normal',
               fechaInicio: p.fechaInicio || '', condiciones: p.condiciones || '', obs: p.obs || ''
             };
           });
 
-          state.pagos = pagosSync.filter(p => {
-            const key = `${p.provId}|${p.fecha}|${p.monto}`;
-            return !deletedPaymentIds.has(key);
-          });
+          state.pagos = pagosFinales;
 
           state.comprobantes = resJson.comprobantes.map(c => ({
             id: genId(), pagoId: '', provAlias: c.provAlias, name: c.name,

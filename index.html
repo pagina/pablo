@@ -2083,12 +2083,6 @@
     });
 
     // ===================== CONFIG & SYNC =====================
-    function loadConfigUI() {
-      document.getElementById('cfgSheetUrl').value = sheetUrl;
-      document.getElementById('cfgSheetToken').value = sheetToken;
-      updateStatusDisplay();
-    }
-
     async function loadConfigFromSupabase() {
       try {
         const { data } = await _supa.from('config').select('*');
@@ -2099,6 +2093,13 @@
           if (tokenRow?.value) { sheetToken = tokenRow.value; }
         }
       } catch(e) { console.error('Config load error:', e); }
+    }
+
+    async function loadConfigUI() {
+      await loadConfigFromSupabase();
+      document.getElementById('cfgSheetUrl').value = sheetUrl;
+      document.getElementById('cfgSheetToken').value = sheetToken;
+      updateStatusDisplay();
     }
 
     async function saveConfig() {

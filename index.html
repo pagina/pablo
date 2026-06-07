@@ -944,6 +944,9 @@
     // ===================== FIX #1: LIMPIAR DATOS DE MUESTRA =====================
     // Corre una sola vez al cargar la página. Si el localStorage solo tiene los 8
     // proveedores de demo hardcodeados, los borra para que Supabase sea la fuente real.
+    // FIX: Borrar datos de muestra del localStorage
+    // Se ejecuta siempre al cargar. Si hay proveedores que sean todos del demo, los borra.
+    // También borra si hay mezcla con datos de muestra (por si quedaron mezclados).
     (function cleanupSampleData() {
       const SAMPLE_ALIASES = new Set([
         'Juan Telas','Marta Hilos','Fábrica Norte','Botones y más',
@@ -951,7 +954,9 @@
       ]);
       try {
         const provs = JSON.parse(localStorage.getItem('gp_proveedores') || '[]');
-        if (provs.length > 0 && provs.every(p => SAMPLE_ALIASES.has(p.alias))) {
+        // Borrar si ALGUNO de los proveedores es de muestra
+        const hasSampleData = provs.some(p => SAMPLE_ALIASES.has(p.alias));
+        if (hasSampleData) {
           console.log('GestorPRO: eliminando datos de muestra del localStorage');
           localStorage.removeItem('gp_proveedores');
           localStorage.removeItem('gp_pagos');
@@ -1022,16 +1027,21 @@
     // ===================== SUPABASE AUTH =====================
     async function doGoogleLogin() {
       const err = document.getElementById('loginError');
+      const btn = document.getElementById('btnGoogleLogin');
       err.style.display = 'none';
+      if (btn) { btn.textContent = 'Redirigiendo...'; btn.disabled = true; }
       try {
+        // Usar origin+pathname (sin query params) para que funcione en movil
+        const redirectTo = window.location.origin + window.location.pathname;
         const { error } = await _supa.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: window.location.href }
+          options: { redirectTo }
         });
         if (error) throw error;
       } catch (e) {
         console.error('Login error:', e);
         err.style.display = 'block';
+        if (btn) { btn.textContent = 'Ingresar con Google'; btn.disabled = false; }
       }
     }
 

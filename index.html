@@ -1412,27 +1412,39 @@
       }
     }
 
-    function deletePago(pagoId) {
+    async function deletePago(pagoId) {
       if (!confirm('¿Eliminar este pago? El saldo del proveedor se va a recalcular.')) return;
       const pago = state.pagos.find(p => p.id === pagoId);
       if (!pago) return;
       const prov = state.proveedores.find(p => p.alias === pago.provId);
       if (prov) prov.pagado = Math.max(0, (prov.pagado || 0) - (pago.monto || 0));
       state.pagos = state.pagos.filter(p => p.id !== pagoId);
+      // Borrar en Supabase inmediatamente (no esperar la sync de Sheets)
+      try { await _supa.from('pagos').delete().eq('id', pagoId); } catch(e) { console.error('Supabase delete pago:', e); }
+      // Actualizar pagado del proveedor en Supabase
+      if (prov) {
+        try { await _supa.from('proveedores').update({ pagado: prov.pagado }).eq('id', prov.alias); } catch(e) {}
+      }
+      saveDataLocal();
       queueAction('delete_payment', { pagoId, provAlias: pago.provId, monto: pago.monto });
-      saveData(); renderAll();
+      renderDashboard(); renderSummary();
       showToast('Pago eliminado', 'error');
     }
 
-    function deletePagoFromDetail(pagoId) {
+    async function deletePagoFromDetail(pagoId) {
       if (!confirm('¿Eliminar este pago? El saldo se va a recalcular.')) return;
       const pago = state.pagos.find(p => p.id === pagoId);
       if (!pago) return;
       const prov = state.proveedores.find(p => p.alias === pago.provId);
       if (prov) prov.pagado = Math.max(0, (prov.pagado || 0) - (pago.monto || 0));
       state.pagos = state.pagos.filter(p => p.id !== pagoId);
+      // Borrar en Supabase inmediatamente
+      try { await _supa.from('pagos').delete().eq('id', pagoId); } catch(e) { console.error('Supabase delete pago:', e); }
+      if (prov) {
+        try { await _supa.from('proveedores').update({ pagado: prov.pagado }).eq('id', prov.alias); } catch(e) {}
+      }
+      saveDataLocal();
       queueAction('delete_payment', { pagoId, provAlias: pago.provId, monto: pago.monto });
-      saveData();
       showDetail(pago.provId);
       showToast('Pago eliminado', 'error');
     }

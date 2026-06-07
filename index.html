@@ -683,14 +683,15 @@
           <div class="config-desc">Conectá tu aplicación web con una planilla de Google Sheets para mantener tus datos respaldados en la nube y compartidos en tiempo real.</div>
           <div class="config-group">
             <label>URL de Google Apps Script Web App</label>
-            <input type="url" id="cfgSheetUrl" placeholder="https://script.google.com/macros/s/.../exec" oninput="saveConfig()">
+            <input type="url" id="cfgSheetUrl" placeholder="https://script.google.com/macros/s/.../exec" >
           </div>
           <div class="config-group">
             <label>Clave Secreta de Acceso (Token)</label>
-            <input type="password" id="cfgSheetToken" placeholder="Contraseña configurada en el Apps Script" oninput="saveConfig()">
+            <input type="password" id="cfgSheetToken" placeholder="Contraseña configurada en el Apps Script" >
           </div>
           <div style="display:flex;gap:10px;margin-top:20px">
-            <button class="btn" onclick="syncWithSheet()" style="flex:1;justify-content:center">🔄 Sincronizar Ahora</button>
+            <button class="btn" onclick="saveConfig()" style="flex:1;justify-content:center">💾 Guardar Config</button>
+            <button class="btn btn-secondary" onclick="syncWithSheet()" style="justify-content:center">🔄 Sincronizar</button>
             <button class="btn btn-secondary" onclick="clearLocalConfig()" style="justify-content:center">Desconectar</button>
           </div>
           <div class="sync-status-box">
@@ -971,9 +972,10 @@
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('app').style.display = 'flex';
       document.getElementById('userBadge').textContent = window.currentUser.label;
+      // Cargar Supabase (datos + config) y recién entonces mostrar
       await window.loadDataFromSupabase();
       window.renderAll();
-      if (window.sheetUrl && navigator.onLine) window.syncWithSheet();
+      if (sheetUrl && navigator.onLine) window.syncWithSheet();
     }
 
     initSupabaseAuth();
@@ -1071,15 +1073,28 @@
       }
     }
 
+    let _realtimeSubscribed = false;
+
     async function loadDataFromSupabase() {
       try {
-        const [provRes, pagosRes, compRes] = await Promise.all([
+        // Config + datos en un solo request paralelo
+        const [provRes, pagosRes, compRes, cfgRes] = await Promise.all([
           _supa.from('proveedores').select('*'),
           _supa.from('pagos').select('*'),
-          _supa.from('comprobantes').select('*')
+          _supa.from('comprobantes').select('*'),
+          _supa.from('config').select('*')
         ]);
 
-        if (provRes.data && provRes.data.length > 0) {
+        // Config primero — sheetUrl disponible antes de renderizar
+        if (cfgRes.data && cfgRes.data.length > 0) {
+          const urlRow = cfgRes.data.find(r => r.key === 'sheet_url');
+          const tokenRow = cfgRes.data.find(r => r.key === 'sheet_token');
+          if (urlRow?.value) { sheetUrl = urlRow.value; window.sheetUrl = sheetUrl; }
+          if (tokenRow?.value) { sheetToken = tokenRow.value; }
+        }
+
+        // Proveedores — solo usar Supabase, nunca datos de muestra
+        if (provRes.data) {
           state.proveedores = provRes.data.map(p => ({
             id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
             telefono: p.telefono, email: p.email,
@@ -1087,8 +1102,6 @@
             categoria: p.categoria, prioridad: p.prioridad || 'normal',
             fechaInicio: p.fecha_inicio, condiciones: p.condiciones, obs: p.obs
           }));
-        } else {
-          loadDataLocal();
         }
 
         if (pagosRes.data) {
@@ -1108,18 +1121,24 @@
         }
 
         saveDataLocal();
-        await loadConfigFromSupabase();
 
-        // Real-time updates
-        _supa.channel('db-changes')
-          .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-            loadDataFromSupabase().then(() => renderAll());
-          })
-          .subscribe();
+        // Real-time solo una vez
+        if (!_realtimeSubscribed) {
+          _realtimeSubscribed = true;
+          _supa.channel('db-changes')
+            .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+              loadDataFromSupabase().then(() => renderAll());
+            })
+            .subscribe();
+        }
 
       } catch (err) {
-        console.error('Supabase load error, using local:', err);
-        loadDataLocal();
+        console.error('Supabase load error, usando local:', err);
+        // En error, usar localStorage pero SIN cargar datos de muestra
+        state.proveedores = JSON.parse(localStorage.getItem('gp_proveedores') || '[]');
+        state.pagos = JSON.parse(localStorage.getItem('gp_pagos') || '[]');
+        state.comprobantes = JSON.parse(localStorage.getItem('gp_comprobantes') || '[]');
+        syncQueue = JSON.parse(localStorage.getItem('gp_sync_queue') || '[]');
       }
       updateSyncBadge();
       updateStatusDisplay();
@@ -1130,7 +1149,7 @@
       state.pagos = JSON.parse(localStorage.getItem('gp_pagos') || '[]');
       state.comprobantes = JSON.parse(localStorage.getItem('gp_comprobantes') || '[]');
       syncQueue = JSON.parse(localStorage.getItem('gp_sync_queue') || '[]');
-      if (state.proveedores.length === 0) loadSampleData();
+      // Nunca cargar datos de muestra automáticamente — confunde con datos reales
     }
 
     // Keep loadData as alias for backward compat
@@ -2117,17 +2136,23 @@
     }
 
     async function saveConfig() {
-      sheetUrl = document.getElementById('cfgSheetUrl').value.trim();
-      sheetToken = document.getElementById('cfgSheetToken').value.trim();
+      const newUrl = document.getElementById('cfgSheetUrl').value.trim();
+      const newToken = document.getElementById('cfgSheetToken').value.trim();
+      if (!newUrl) { showToast('La URL no puede estar vacía', 'error'); return; }
+      sheetUrl = newUrl;
+      sheetToken = newToken;
       window.sheetUrl = sheetUrl;
       try {
         await _supa.from('config').upsert([
           { key: 'sheet_url', value: sheetUrl },
           { key: 'sheet_token', value: sheetToken }
         ], { onConflict: 'key' });
-      } catch(e) { console.error('Config save error:', e); }
+        showToast('Configuración guardada ✓');
+      } catch(e) {
+        console.error('Config save error:', e);
+        showToast('Error al guardar config', 'error');
+      }
       updateSyncBadge(); updateStatusDisplay();
-      showToast('Configuración guardada ✓');
     }
 
     function clearLocalConfig() {

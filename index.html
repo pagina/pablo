@@ -701,7 +701,7 @@
             <div class="sync-status-item"><span>Última sincronización:</span><span id="lastSyncVal">Nunca</span></div>
           </div>
         </div>
-        <div class="app-info-footer">GestorPRO v2.2 · PWA con soporte Offline</div>
+        <div class="app-info-footer">GestorPRO v2.3 · PWA con soporte Offline</div>
       </div>
     </main>
   </div>
@@ -934,14 +934,33 @@
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
-  <!-- ==================== FIREBASE ==================== -->
+  <!-- ==================== SUPABASE ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const SUPA_URL = 'https://cgfynknolatafeimgboe.supabase.co';
     const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZnlua25vbGF0YWZlaW1nYm9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2ODAzMzEsImV4cCI6MjA5NjI1NjMzMX0.E7SMM9QzM__08hAOOM0RQhocR3VhuHk77lAj11A_w1s';
     const _supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
-    // Init Google login via Supabase Auth
+    // ===================== FIX #1: LIMPIAR DATOS DE MUESTRA =====================
+    // Corre una sola vez al cargar la página. Si el localStorage solo tiene los 8
+    // proveedores de demo hardcodeados, los borra para que Supabase sea la fuente real.
+    (function cleanupSampleData() {
+      const SAMPLE_ALIASES = new Set([
+        'Juan Telas','Marta Hilos','Fábrica Norte','Botones y más',
+        'Entretela SA','Distribuidora Sur','Pedro Cintas','Agujas & Co'
+      ]);
+      try {
+        const provs = JSON.parse(localStorage.getItem('gp_proveedores') || '[]');
+        if (provs.length > 0 && provs.every(p => SAMPLE_ALIASES.has(p.alias))) {
+          console.log('GestorPRO: eliminando datos de muestra del localStorage');
+          localStorage.removeItem('gp_proveedores');
+          localStorage.removeItem('gp_pagos');
+          localStorage.removeItem('gp_comprobantes');
+          localStorage.removeItem('gp_sync_queue');
+        }
+      } catch(e) { /* silencioso */ }
+    })();
+
     async function initSupabaseAuth() {
       const { data: { session } } = await _supa.auth.getSession();
       if (session?.user) {
@@ -972,7 +991,6 @@
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('app').style.display = 'flex';
       document.getElementById('userBadge').textContent = window.currentUser.label;
-      // Cargar Supabase (datos + config) y recién entonces mostrar
       await window.loadDataFromSupabase();
       window.renderAll();
       if (sheetUrl && navigator.onLine) window.syncWithSheet();
@@ -983,7 +1001,6 @@
 
   <!-- ==================== JAVASCRIPT ==================== -->
   <script>
-    // ===================== DATA & CONFIG =====================
     const CATEGORIAS = ['Telas', 'Insumos', 'Servicios', 'Transporte', 'Mercería', 'Varios', 'Otro'];
 
     let currentUser = null;
@@ -996,7 +1013,6 @@
 
     const state = { proveedores: [], pagos: [], comprobantes: [] };
 
-    // URL y token fijos — no dependen de localStorage ni Firebase
     let sheetUrl = 'https://script.google.com/macros/s/AKfycbz51zNJ-99sckD8vrhZ59cetqQ5G4KI3NqyNSubS2DblIOy9tX-zZ0sFsyo5idzw7A/exec';
     let sheetToken = 'gestorpro123';
     let syncQueue = [];
@@ -1038,7 +1054,6 @@
 
     async function saveDataToSupabase() {
       try {
-        // Upsert proveedores
         if (state.proveedores.length > 0) {
           const rows = state.proveedores.map(p => ({
             id: p.alias, alias: p.alias, nombre: p.nombre || '', cbu: p.cbu || '',
@@ -1049,7 +1064,6 @@
           }));
           await _supa.from('proveedores').upsert(rows, { onConflict: 'id' });
         }
-        // Upsert pagos
         if (state.pagos.length > 0) {
           const rows = state.pagos.map(p => ({
             id: p.id, prov_id: p.provId, fecha: p.fecha, tipo: p.tipo,
@@ -1058,7 +1072,6 @@
           }));
           await _supa.from('pagos').upsert(rows, { onConflict: 'id' });
         }
-        // Upsert comprobantes (sin base64 — solo metadata y URL)
         const compsToSave = state.comprobantes.filter(c => !c.data?.startsWith('local://'));
         if (compsToSave.length > 0) {
           const rows = compsToSave.map(c => ({
@@ -1077,7 +1090,6 @@
 
     async function loadDataFromSupabase() {
       try {
-        // Config + datos en un solo request paralelo
         const [provRes, pagosRes, compRes, cfgRes] = await Promise.all([
           _supa.from('proveedores').select('*'),
           _supa.from('pagos').select('*'),
@@ -1085,7 +1097,6 @@
           _supa.from('config').select('*')
         ]);
 
-        // Config primero — sheetUrl disponible antes de renderizar
         if (cfgRes.data && cfgRes.data.length > 0) {
           const urlRow = cfgRes.data.find(r => r.key === 'sheet_url');
           const tokenRow = cfgRes.data.find(r => r.key === 'sheet_token');
@@ -1093,7 +1104,6 @@
           if (tokenRow?.value) { sheetToken = tokenRow.value; }
         }
 
-        // Proveedores — solo usar Supabase, nunca datos de muestra
         if (provRes.data) {
           state.proveedores = provRes.data.map(p => ({
             id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
@@ -1122,7 +1132,6 @@
 
         saveDataLocal();
 
-        // Real-time solo una vez
         if (!_realtimeSubscribed) {
           _realtimeSubscribed = true;
           _supa.channel('db-changes')
@@ -1134,7 +1143,6 @@
 
       } catch (err) {
         console.error('Supabase load error, usando local:', err);
-        // En error, usar localStorage pero SIN cargar datos de muestra
         state.proveedores = JSON.parse(localStorage.getItem('gp_proveedores') || '[]');
         state.pagos = JSON.parse(localStorage.getItem('gp_pagos') || '[]');
         state.comprobantes = JSON.parse(localStorage.getItem('gp_comprobantes') || '[]');
@@ -1149,12 +1157,9 @@
       state.pagos = JSON.parse(localStorage.getItem('gp_pagos') || '[]');
       state.comprobantes = JSON.parse(localStorage.getItem('gp_comprobantes') || '[]');
       syncQueue = JSON.parse(localStorage.getItem('gp_sync_queue') || '[]');
-      // Nunca cargar datos de muestra automáticamente — confunde con datos reales
     }
 
-    // Keep loadData as alias for backward compat
     function loadData() { loadDataLocal(); updateSyncBadge(); updateStatusDisplay(); }
-    // Alias for Firebase calls still in code
     async function loadDataFromFirebase() { return loadDataFromSupabase(); }
 
     // ===================== META ENCODING =====================
@@ -1224,7 +1229,6 @@
 
     async function saveFileOffline(id, base64, name, mimeType) {
       try {
-        // Upload to Supabase Storage
         const base64Data = base64.split(',')[1];
         const byteChars = atob(base64Data);
         const byteArr = new Uint8Array(byteChars.length);
@@ -1235,10 +1239,8 @@
         const { data, error } = await _supa.storage.from('comprobantes').upload(path, blob, { contentType: mimeType, upsert: true });
         if (error) throw error;
         const { data: urlData } = _supa.storage.from('comprobantes').getPublicUrl(path);
-        // Update the comprobante data to use the public URL
         const comp = state.comprobantes.find(c => c.id === id);
         if (comp) comp.data = urlData.publicUrl;
-        // Also save to IndexedDB as fallback
         try {
           const db = await getDB();
           await new Promise((resolve, reject) => {
@@ -1251,7 +1253,6 @@
         return urlData.publicUrl;
       } catch (err) {
         console.error('Storage upload error, saving locally:', err);
-        // Fallback to IndexedDB
         try {
           const db = await getDB();
           return new Promise((resolve, reject) => {
@@ -1288,34 +1289,6 @@
       } catch (err) { console.error('IndexedDB delete error:', err); }
     }
 
-    // ===================== STORAGE =====================
-    function saveData() {
-      localStorage.setItem('gp_proveedores', JSON.stringify(state.proveedores));
-      localStorage.setItem('gp_pagos', JSON.stringify(state.pagos));
-      localStorage.setItem('gp_comprobantes', JSON.stringify(state.comprobantes));
-      localStorage.setItem('gp_sync_queue', JSON.stringify(syncQueue));
-    }
-
-    function loadSampleData() {
-      state.proveedores = [
-        { id:'Juan Telas', alias:'Juan Telas', nombre:'Juan Carlos Pérez', cbu:'0000003100012345678901', telefono:'5491155667788', email:'juan@telas.com', deudaTotal:85000, pagado:30000, categoria:'Telas', prioridad:'urgente', fechaInicio:'2025-03-15', condiciones:'30 días', obs:'Paga los viernes' },
-        { id:'Marta Hilos', alias:'Marta Hilos', nombre:'Marta González', cbu:'martagonzalez.mp', telefono:'5491144332211', email:'', deudaTotal:42000, pagado:42000, categoria:'Mercería', prioridad:'normal', fechaInicio:'2025-01-10', condiciones:'', obs:'' },
-        { id:'Fábrica Norte', alias:'Fábrica Norte', nombre:'Textil Norte S.A.', cbu:'0070099840000000500210', telefono:'', email:'ventas@textilnorte.com', deudaTotal:120000, pagado:20000, categoria:'Telas', prioridad:'urgente', fechaInicio:'2025-04-01', condiciones:'Factura vence 15 de cada mes', obs:'' },
-        { id:'Botones y más', alias:'Botones y más', nombre:'Raúl Díaz', cbu:'0000077700000001234568', telefono:'5491133445566', email:'', deudaTotal:15000, pagado:0, categoria:'Mercería', prioridad:'normal', fechaInicio:'2025-05-20', condiciones:'', obs:'' },
-        { id:'Entretela SA', alias:'Entretela SA', nombre:'Entretela S.A.', cbu:'entretelasa.mp', telefono:'', email:'info@entretela.com', deudaTotal:67500, pagado:30000, categoria:'Insumos', prioridad:'normal', fechaInicio:'2025-02-01', condiciones:'Solo transferencia', obs:'' },
-        { id:'Distribuidora Sur', alias:'Distribuidora Sur', nombre:'Distribuidora del Sur SRL', cbu:'0000003100098765432109', telefono:'5491122334455', email:'dist.sur@mail.com', deudaTotal:200000, pagado:80000, categoria:'Telas', prioridad:'urgente', fechaInicio:'2025-01-15', condiciones:'Descuento 5% pago al día', obs:'' },
-        { id:'Pedro Cintas', alias:'Pedro Cintas', nombre:'Pedro Sánchez', cbu:'pedrosanchez.cv', telefono:'5491199887766', email:'', deudaTotal:9500, pagado:9500, categoria:'Mercería', prioridad:'sinprisa', fechaInicio:'2025-04-10', condiciones:'', obs:'' },
-        { id:'Agujas & Co', alias:'Agujas & Co', nombre:'Agujas y Accesorios SRL', cbu:'0000077700000009876543', telefono:'', email:'', deudaTotal:33000, pagado:10000, categoria:'Insumos', prioridad:'normal', fechaInicio:'2025-03-01', condiciones:'A convenir', obs:'' }
-      ];
-      state.pagos = [
-        { id:'sp1', provId:'Juan Telas', fecha:'2025-06-01', tipo:'parcial', monto:15000, metodo:'Transferencia', referencia:'TRF-001234', banco:'Banco Galicia', obs:'' },
-        { id:'sp2', provId:'Juan Telas', fecha:'2025-06-05', tipo:'parcial', monto:15000, metodo:'Efectivo', referencia:'', banco:'', obs:'Pago en mano' },
-        { id:'sp3', provId:'Marta Hilos', fecha:'2025-05-20', tipo:'total', monto:42000, metodo:'Transferencia', referencia:'TRF-005678', banco:'Mercado Pago', obs:'' },
-        { id:'sp4', provId:'Distribuidora Sur', fecha:'2025-06-03', tipo:'parcial', monto:80000, metodo:'Transferencia', referencia:'TRF-009900', banco:'Banco Nación', obs:'Primera cuota' },
-      ];
-      saveData();
-    }
-
     // ===================== UTILS =====================
     function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
     function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
@@ -1343,7 +1316,6 @@
     }
     function parseMonto(str) {
       if (!str && str !== 0) return 0;
-      // Eliminar puntos de miles y reemplazar coma decimal por punto
       const clean = String(str).replace(/\./g, '').replace(',', '.');
       return parseFloat(clean) || 0;
     }
@@ -1394,7 +1366,6 @@
         <div class="dash-status-chip"><span style="color:var(--green)">✅</span> ${alDia} al día</div>
       `;
 
-      // Urgent providers
       const urgents = state.proveedores.filter(p => (p.prioridad === 'urgente') && getEstado(p) !== 'dia');
       const urgentEl = document.getElementById('dashUrgent');
       if (urgents.length > 0) {
@@ -1411,7 +1382,6 @@
         urgentEl.innerHTML = '';
       }
 
-      // Recent payments
       const recentPagos = [...state.pagos].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || '')).slice(0, 5);
       const recentEl = document.getElementById('dashRecent');
       if (recentPagos.length > 0) {
@@ -1453,7 +1423,7 @@
       state.pagos = state.pagos.filter(p => p.id !== pagoId);
       queueAction('delete_payment', { pagoId, provAlias: pago.provId, monto: pago.monto });
       saveData();
-      showDetail(pago.provId); // Refresca el detalle sin volver a la lista
+      showDetail(pago.provId);
       showToast('Pago eliminado', 'error');
     }
 
@@ -1508,7 +1478,6 @@
         return true;
       });
 
-      // Sort
       if (sort === 'deuda') {
         list.sort((a, b) => ((b.deudaTotal - b.pagado) - (a.deudaTotal - a.pagado)));
       } else if (sort === 'nombre') {
@@ -1637,7 +1606,6 @@
 
       document.getElementById('detailInfoGrid').innerHTML = infoHTML;
 
-      // Actions
       const isOwner = currentUser.role === 'owner';
       let actions = `<button class="btn" onclick="openPago('${esc(p.alias)}')">💳 Registrar Pago</button>`;
       if (isOwner) {
@@ -1784,56 +1752,34 @@
       const condiciones = document.getElementById('fProvCondiciones').value.trim();
       const obsText = document.getElementById('fProvObs').value.trim();
 
-      const provData = {
-        alias,
-        nombre: document.getElementById('fProvNombre').value.trim(),
-        cbu: document.getElementById('fProvCBU').value.trim(),
-        telefono, email,
-        deudaTotal,
-        pagado,
-        categoria,
-        prioridad,
-        fechaInicio,
-        condiciones,
-        obs: obsText
-      };
+      const provData = { alias, nombre: document.getElementById('fProvNombre').value.trim(),
+        cbu: document.getElementById('fProvCBU').value.trim(), telefono, email,
+        deudaTotal, pagado, categoria, prioridad, fechaInicio, condiciones, obs: obsText };
 
       if (editingProvId) {
         const p = state.proveedores.find(x => x.alias === editingProvId);
         const oldAlias = p.alias;
-        Object.assign(p, { alias, nombre: provData.nombre, cbu: provData.cbu, telefono, email, deudaTotal, pagado: p.pagado, categoria, prioridad, fechaInicio, condiciones, obs: obsText });
+        Object.assign(p, { alias, nombre: provData.nombre, cbu: provData.cbu, telefono, email,
+          deudaTotal, pagado: p.pagado, categoria, prioridad, fechaInicio, condiciones, obs: obsText });
         queueAction('edit_provider', { oldAlias, ...provData });
       } else {
         if (state.proveedores.some(x => x.alias.toLowerCase() === alias.toLowerCase())) {
           showToast('Ya existe un proveedor con ese alias', 'error'); return;
         }
         const pagoMonto = Math.min(pagado, deudaTotal);
-        state.proveedores.push({ id: alias, alias, nombre: provData.nombre, cbu: provData.cbu, telefono, email, deudaTotal, pagado: pagoMonto, categoria, prioridad, fechaInicio, condiciones, obs: obsText });
+        state.proveedores.push({ id: alias, alias, nombre: provData.nombre, cbu: provData.cbu,
+          telefono, email, deudaTotal, pagado: pagoMonto, categoria, prioridad, fechaInicio, condiciones, obs: obsText });
         queueAction('add_provider', provData);
 
         if (pagoMonto > 0) {
           const pagoId = genId();
           const pagoFecha = fechaInicio || todayISO();
-          state.pagos.push({
-            id: pagoId,
-            provId: alias,
-            fecha: pagoFecha,
-            tipo: pagoMonto >= deudaTotal ? 'total' : 'parcial',
-            monto: pagoMonto,
-            metodo: 'Efectivo',
-            banco: '',
-            referencia: '',
-            obs: 'Pago inicial'
-          });
-          const obsForSheet = buildPaymentObs('Efectivo', '', '', 'Pago inicial');
-          queueAction('add_payment', {
-            provAlias: alias,
-            fecha: pagoFecha,
-            tipo: pagoMonto >= deudaTotal ? 'total' : 'parcial',
-            monto: pagoMonto,
-            obs: obsForSheet,
-            pendingFileIds: []
-          });
+          state.pagos.push({ id: pagoId, provId: alias, fecha: pagoFecha,
+            tipo: pagoMonto >= deudaTotal ? 'total' : 'parcial', monto: pagoMonto,
+            metodo: 'Efectivo', banco: '', referencia: '', obs: 'Pago inicial' });
+          queueAction('add_payment', { provAlias: alias, fecha: pagoFecha,
+            tipo: pagoMonto >= deudaTotal ? 'total' : 'parcial', monto: pagoMonto,
+            obs: 'Efectivo | Pago inicial', pendingFileIds: [] });
         }
       }
 
@@ -2001,9 +1947,7 @@
         state.comprobantes.push({ id: fileId, pagoId, provAlias, name: f.name, data: `local://${fileId}`, type: f.type, fecha, monto: montoReal });
       }
 
-      // Build composite obs for Sheets
       const obsForSheet = buildPaymentObs(metodo, referencia, banco, obs);
-
       queueAction('add_payment', { provAlias, fecha, tipo, monto: montoReal, obs: obsForSheet, pendingFileIds });
       saveData(); closeModal('modalPago'); showDetail(provAlias); renderSummary(); showToast('Pago registrado ✓');
     }
@@ -2080,7 +2024,6 @@
       const imgEl = document.getElementById('lightboxImg');
 
       if (c.type !== 'image') {
-        // For PDFs/non-images, open the Drive URL directly
         if (c.data && !c.data.startsWith('local://')) { window.open(c.data, '_blank'); }
         return;
       }
@@ -2181,6 +2124,7 @@
       if (navigator.onLine && sheetUrl && !isSyncing) syncWithSheet();
     }
 
+    // ===================== FIX #2 & #3: SYNC MÁS RÁPIDA =====================
     async function syncWithSheet() {
       if (isSyncing) return;
       if (!sheetUrl) { showToast('Configurá la URL de Google Sheets en Ajustes', 'error'); updateSyncBadge('unconfigured'); return; }
@@ -2189,7 +2133,7 @@
       updateSyncBadge('syncing'); updateStatusDisplay();
 
       try {
-        // 1. Process sync queue
+        // 1. Procesar cola de acciones pendientes (si hay)
         if (syncQueue.length > 0) {
           const queueToSend = [];
           for (const item of syncQueue) {
@@ -2204,28 +2148,31 @@
             queueToSend.push(payloadItem);
           }
 
-          const response = await fetch(`${sheetUrl}?token=${encodeURIComponent(sheetToken)}`, {
+          const postResponse = await fetch(`${sheetUrl}?token=${encodeURIComponent(sheetToken)}`, {
             method: 'POST', headers: { 'Content-Type': 'text/plain' }, redirect: 'follow',
             body: JSON.stringify({ action: 'sync_queue', data: { queue: queueToSend } })
           });
 
-          const resJson = await response.json();
-          if (resJson.status === 'success') {
+          const postJson = await postResponse.json();
+          if (postJson.status === 'success') {
             for (const item of syncQueue) {
               if ((item.action === 'add_payment' || item.action === 'add_document') && item.data.pendingFileIds) {
                 for (const fileId of item.data.pendingFileIds) await deleteFileOffline(fileId);
               }
             }
-            syncQueue = []; saveData();
-          } else { throw new Error(resJson.message || 'Error procesando cola'); }
+            syncQueue = []; saveDataLocal();
+          } else { throw new Error(postJson.message || 'Error procesando cola'); }
         }
 
-        // 2. Download fresh state from Sheets
-        const response = await fetch(`${sheetUrl}?token=${encodeURIComponent(sheetToken)}`, { method: 'GET', redirect: 'follow' });
-        const resJson = await response.json();
+        // 2. Descargar estado fresco desde Sheets
+        // Cache-bust con timestamp para evitar respuestas cacheadas
+        const getResponse = await fetch(
+          `${sheetUrl}?token=${encodeURIComponent(sheetToken)}&_=${Date.now()}`,
+          { method: 'GET', redirect: 'follow' }
+        );
+        const resJson = await getResponse.json();
 
         if (resJson.status === 'success') {
-          // Procesar movimientos primero para calcular pagado real
           const pagosSync = resJson.movimientos.map(m => {
             const parsed = parsePaymentObs(m.obs);
             return {
@@ -2234,17 +2181,13 @@
             };
           });
 
-          state.proveedores = resJson.proveedores.map(p => {
-            // Usar SOLO el valor de pagado que viene de Sheets (fuente de verdad única)
-            return {
-              id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
-              telefono: p.telefono !== undefined && p.telefono !== null ? String(p.telefono) : '', email: p.email || '',
-              deudaTotal: Number(p.deudaTotal) || 0, pagado: Number(p.pagado) || 0,
-              categoria: p.categoria || '', prioridad: p.prioridad || 'normal',
-              fechaInicio: p.fechaInicio || '', condiciones: p.condiciones || '',
-              obs: p.obs || ''
-            };
-          });
+          state.proveedores = resJson.proveedores.map(p => ({
+            id: p.alias, alias: p.alias, nombre: p.nombre, cbu: p.cbu,
+            telefono: p.telefono !== undefined && p.telefono !== null ? String(p.telefono) : '', email: p.email || '',
+            deudaTotal: Number(p.deudaTotal) || 0, pagado: Number(p.pagado) || 0,
+            categoria: p.categoria || '', prioridad: p.prioridad || 'normal',
+            fechaInicio: p.fechaInicio || '', condiciones: p.condiciones || '', obs: p.obs || ''
+          }));
 
           state.pagos = pagosSync;
 
@@ -2254,9 +2197,12 @@
             fecha: c.fecha, monto: c.monto
           }));
 
-          lastSyncTime = new Date().toLocaleTimeString() + ' ' + new Date().toLocaleDateString();
+          // FIX #3: guardar hora exacta para mostrar en badge
+          const now = new Date();
+          lastSyncTime = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+            + ' ' + now.toLocaleDateString('es-AR');
           localStorage.setItem('gp_last_sync', lastSyncTime);
-          saveData(); renderAll();
+          saveDataLocal(); renderAll();
           showToast('Planilla sincronizada ✓');
           updateSyncBadge('connected');
         } else { throw new Error(resJson.message || 'Error al descargar datos'); }
@@ -2280,12 +2226,22 @@
       const qText = qCount > 0 ? ` (${qCount})` : '';
       const dot = badge.querySelector('.sync-dot');
       const txt = badge.querySelector('span:last-child');
-      if (status === 'syncing') { dot.className = 'sync-dot syncing'; txt.textContent = `Sincronizando${qText}`; }
-      else if (status === 'connected') { dot.className = 'sync-dot connected'; txt.textContent = 'Conectado'; }
-      else if (status === 'error' || !navigator.onLine) { dot.className = 'sync-dot error'; txt.textContent = `Offline${qText}`; }
-      else {
+      if (status === 'syncing') {
+        dot.className = 'sync-dot syncing'; txt.textContent = `Sincronizando${qText}`;
+      } else if (status === 'connected') {
+        dot.className = 'sync-dot connected';
+        // FIX #3: mostrar hora de última sync en el badge
+        const parts = lastSyncTime && lastSyncTime !== 'Nunca' ? lastSyncTime.split(' ') : [];
+        txt.textContent = parts.length > 0 ? `Sync ${parts[0]}` : 'Conectado';
+      } else if (status === 'error' || !navigator.onLine) {
+        dot.className = 'sync-dot error'; txt.textContent = `Offline${qText}`;
+      } else {
         if (qCount > 0) { dot.className = 'sync-dot offline'; txt.textContent = `Pendientes${qText}`; }
-        else { dot.className = 'sync-dot connected'; txt.textContent = 'Conectado'; }
+        else {
+          dot.className = 'sync-dot connected';
+          const parts = lastSyncTime && lastSyncTime !== 'Nunca' ? lastSyncTime.split(' ') : [];
+          txt.textContent = parts.length > 0 ? `Sync ${parts[0]}` : 'Conectado';
+        }
       }
     }
 
@@ -2312,7 +2268,7 @@
       });
     }
 
-    // Expose to window for Firebase module access
+    // Expose to window
     window.loadDataFromSupabase = loadDataFromSupabase;
     window.loadDataFromFirebase = loadDataFromFirebase;
     window.renderAll = renderAll;
@@ -2322,5 +2278,4 @@
     window.doLogout = doLogout;
   </script>
 </body>
-
 </html>

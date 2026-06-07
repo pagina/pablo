@@ -994,11 +994,9 @@
 
     const state = { proveedores: [], pagos: [], comprobantes: [] };
 
-    // URL y token fijos
-const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbz51zNJ-99sckD8vrhZ59cetqQ5G4KI3NqyNSubS2DblIOy9tX-zZ0sFsyo5idzw7A/exec';
-const DEFAULT_SHEET_TOKEN = 'gestorpro123';
-let sheetUrl = DEFAULT_SHEET_URL;
-let sheetToken = DEFAULT_SHEET_TOKEN;
+    // URL y token fijos — no dependen de localStorage ni Firebase
+    let sheetUrl = 'https://script.google.com/macros/s/AKfycbz51zNJ-99sckD8vrhZ59cetqQ5G4KI3NqyNSubS2DblIOy9tX-zZ0sFsyo5idzw7A/exec';
+    let sheetToken = 'gestorpro123';
     let syncQueue = [];
     let isSyncing = false;
     let lastSyncTime = localStorage.getItem('gp_last_sync') || 'Nunca';
@@ -1010,7 +1008,7 @@ let sheetToken = DEFAULT_SHEET_TOKEN;
       try {
         const { error } = await _supa.auth.signInWithOAuth({
           provider: 'google',
-          options: { redirectTo: 'https://pagina.github.io/pablo/' }
+          options: { redirectTo: window.location.href }
         });
         if (error) throw error;
       } catch (e) {
@@ -1110,6 +1108,7 @@ let sheetToken = DEFAULT_SHEET_TOKEN;
         }
 
         saveDataLocal();
+        await loadConfigFromSupabase();
 
         // Real-time updates
         _supa.channel('db-changes')
@@ -1268,6 +1267,14 @@ let sheetToken = DEFAULT_SHEET_TOKEN;
           tx.onerror = () => reject(tx.error);
         });
       } catch (err) { console.error('IndexedDB delete error:', err); }
+    }
+
+    // ===================== STORAGE =====================
+    function saveData() {
+      localStorage.setItem('gp_proveedores', JSON.stringify(state.proveedores));
+      localStorage.setItem('gp_pagos', JSON.stringify(state.pagos));
+      localStorage.setItem('gp_comprobantes', JSON.stringify(state.comprobantes));
+      localStorage.setItem('gp_sync_queue', JSON.stringify(syncQueue));
     }
 
     function loadSampleData() {
@@ -2082,14 +2089,30 @@ let sheetToken = DEFAULT_SHEET_TOKEN;
       updateStatusDisplay();
     }
 
-    function saveConfig() {
+    async function loadConfigFromSupabase() {
+      try {
+        const { data } = await _supa.from('config').select('*');
+        if (data && data.length > 0) {
+          const urlRow = data.find(r => r.key === 'sheet_url');
+          const tokenRow = data.find(r => r.key === 'sheet_token');
+          if (urlRow?.value) { sheetUrl = urlRow.value; window.sheetUrl = sheetUrl; }
+          if (tokenRow?.value) { sheetToken = tokenRow.value; }
+        }
+      } catch(e) { console.error('Config load error:', e); }
+    }
+
+    async function saveConfig() {
       sheetUrl = document.getElementById('cfgSheetUrl').value.trim();
       sheetToken = document.getElementById('cfgSheetToken').value.trim();
-      localStorage.setItem('gp_sheet_url', sheetUrl);
-      localStorage.setItem('gp_sheet_token', sheetToken);
       window.sheetUrl = sheetUrl;
+      try {
+        await _supa.from('config').upsert([
+          { key: 'sheet_url', value: sheetUrl },
+          { key: 'sheet_token', value: sheetToken }
+        ], { onConflict: 'key' });
+      } catch(e) { console.error('Config save error:', e); }
       updateSyncBadge(); updateStatusDisplay();
-      showToast('Configuración guardada y sincronizada ✓');
+      showToast('Configuración guardada ✓');
     }
 
     function clearLocalConfig() {
@@ -2254,7 +2277,7 @@ let sheetToken = DEFAULT_SHEET_TOKEN;
       });
     }
 
-    // Expose to window
+    // Expose to window for Firebase module access
     window.loadDataFromSupabase = loadDataFromSupabase;
     window.loadDataFromFirebase = loadDataFromFirebase;
     window.renderAll = renderAll;
